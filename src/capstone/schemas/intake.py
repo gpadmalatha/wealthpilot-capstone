@@ -39,6 +39,9 @@ class FinancialSnapshot(BaseModel):
   current_assets_inr: Optional[int] = Field(default=None, ge=0)
   current_liabilities_inr: Optional[int] = Field(default=None, ge=0)
   collateral_value_inr: Optional[int] = Field(default=None, ge=0)
+  ebitda_inr: Optional[int] = Field(default=None, ge=0)
+  existing_debt_inr: Optional[int] = Field(default=None, ge=0)
+  months_operating: Optional[int] = Field(default=None, ge=0)
 
 
 class LoanApplication(BaseModel):
@@ -94,13 +97,26 @@ class LoanApplication(BaseModel):
         "missing_fields"
     }
 
-    # 1. Every entry in missing_fields must actually be a known field and be None
+ # 1. Every entry in missing_fields must be a known field and must be None.
+    #    The name may be a top-level field (bureau_score) or a field inside
+    #    declared_financials (ebitda_inr).
+    financial_fields = set(FinancialSnapshot.model_fields.keys())
+
     for field_name in declared_missing:
-      if field_name not in valid_model_fields:
+      if field_name in valid_model_fields:
+        value = getattr(self, field_name)
+      elif field_name in financial_fields:
+        value = (
+            getattr(self.declared_financials, field_name)
+            if self.declared_financials is not None
+            else None
+        )
+      else:
         raise ValueError(
             f"Unknown field '{field_name}' listed in missing_fields."
         )
-      if getattr(self, field_name) is not None:
+
+      if value is not None:
         raise ValueError(
             f"Contradiction: '{field_name}' is listed in missing_fields, "
             "but a non-null value was provided."
