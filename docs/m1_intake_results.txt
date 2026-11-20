@@ -1,0 +1,8 @@
+model: gemini/gemini-flash-lite-latest | records run: 30 | produced a valid object: 30
+attempts needed (1 = first try): {1: 29, 3: 1}
+field                     correct  wrong  abstained
+business_name                  29      0          1
+sector                         29      0          1
+requested_amount_inr           27      0          3
+requested_tenor_months         26      0          4
+annual_revenue_inr             27      0          3

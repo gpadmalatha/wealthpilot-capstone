@@ -7,7 +7,16 @@ name = "applied-ai-capstone-starter"
 version = "0.1.0"
 description = "Empty educational scaffold for IIT Hyderabad Applied AI capstones"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+  "litellm==1.110.1",
+  "pydantic==2.14.3",
+  "pydantic-settings==2.16.3",
+  "python-dotenv==1.2.4",
+  "tenacity==9.2.1",  # litellm needs it for num_retries
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.2.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from functools import lru_cache
 from pathlib import Path
 
@@ -14,8 +15,11 @@ class Settings(BaseSettings):
   project_root: Path = PROJECT_ROOT
   llm_temperature: float = 0.0
   llm_timeout_seconds: int = 60
-
+  max_repair_attempts: int = 3	
+  llm_max_retries: int = 5
+  eval_delay_seconds: float = 5.0  # pause between records when scoring (free-tier rate limits)
 
 @lru_cache
 def get_settings() -> Settings:
+  load_dotenv(PROJECT_ROOT / ".env")
   return Settings()
