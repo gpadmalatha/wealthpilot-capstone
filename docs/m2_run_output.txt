@@ -1,0 +1,52 @@
+model: gemini/gemini-flash-lite-latest
+max_agent_steps: 8
+
+TASK: Review application ASH-L-00000: bureau record, DSCR against policy, and whether it can proceed.
+  tool get_application({'application_id': 'ASH-L-00000'}) -> ok
+  tool get_bureau_report({'applicant_id': 'ASH-A-00000'}) -> ok
+  tool check_bureau_policy({'applicant_id': 'ASH-A-00000'}) -> ok
+  tool assess_dscr({'application_id': 'ASH-L-00000'}) -> ok
+  tool check_approval_authority({'application_id': 'ASH-L-00000'}) -> ok
+  tool hand_off_to_human({'application_id': 'ASH-L-00000', 'reason': 'adverse_credit_history', 'summary': 'Applicant has an adverse bureau score (374 vs 450 min) and a written-off amount (INR 900,000) exceeding the policy limit (INR 500,000).'}) -> ok
+  stop_reason: final_answer after 4 model calls
+  answer: **Application Facts:**
+- **Applicant ID:** ASH-A-00000
+- **Application ID:** ASH-L-00000
+- **Sector:** Light Engineering
+- **Requested Amount:** INR 900,000 for 36 months
+- **Purpose:** Inventory build-up
+- **Declared Annual Revenue:** INR 9,748,000
+
+**Findings:**
+- **Bureau Record:** The bureau score is 374 (below the minimum policy threshold of 450), and the written-off amount is INR 900,000 (exceeding the write-off limit of INR 500,000). Policy verdict: **Adverse**.
+- **DSCR:** Computed DSCR is 1.93, which meets the policy floor of 1.35.
+
+**Proceed Status & Hand-off:**
+The application cannot proceed automatically due to adverse credit history. It has been successfully handed off to a human reviewer under the reason `adverse_credit_history`.
+
+TASK: Review application ASH-L-00001. It is a large loan: check who must approve it and escalate if needed.
+  tool get_application({'application_id': 'ASH-L-00001'}) -> ok
+  tool check_approval_authority({'application_id': 'ASH-L-00001'}) -> ok
+  tool get_bureau_report({'applicant_id': 'ASH-A-00001'}) -> ok
+  tool check_bureau_policy({'applicant_id': 'ASH-A-00001'}) -> ok
+  tool assess_dscr({'application_id': 'ASH-L-00001'}) -> ok
+  tool get_bank_statements({'applicant_id': 'ASH-A-00001'}) -> ok
+  tool hand_off_to_human({'application_id': 'ASH-L-00001', 'reason': 'above_auto_approve_limit', 'summary': 'The requested loan amount of INR 5,100,000 exceeds the auto-approve limit and requires Board Credit Committee approval. Additionally, bank statement retrieval shows a shortfall of 5 months, requiring further document verification.'}) -> ok
+  stop_reason: final_answer after 8 model calls
+  answer: **Application Review: ASH-L-00001**
+
+### **Facts Found:**
+- **Requested Amount & Tenor:** INR 5,100,000 for 36 months (Sector: Auto Components).
+- **Approval Authority:** Board Credit Committee (named signatory required; auto-approval is not allowed).
+- **Credit Bureau:** Score of 500 (meets the minimum policy requirement of 450 with no write-offs or past delinquencies).
+- **DSCR:** 1.79, which meets the required floor of 1.35.
+- **Bank Statements:** Significant shortfall (only 1 month returned out of 6 requested).
+
+### **Proceed & Escalation Status:**
+- The application **cannot** proceed automatically due to exceeding the auto-approve limit and incomplete bank statements.
+- Successfully **handed off to human** (Reason: `above_auto_approve_limit`).
+
+TASK: Review application ASH-L-99999 and tell me whether it can proceed.
+  tool get_application({'application_id': 'ASH-L-99999'}) -> ERROR not_found
+  stop_reason: final_answer after 2 model calls
+  answer: Application `ASH-L-99999` was not found in the system (returned a `not_found` error). Therefore, it cannot proceed, and no further tools could be run.

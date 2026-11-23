@@ -17,6 +17,7 @@ class Settings(BaseSettings):
   llm_timeout_seconds: int = 60
   max_repair_attempts: int = 3	
   llm_max_retries: int = 5
+  max_agent_steps: int = 8  # hard cap on model calls per agent run
   eval_delay_seconds: float = 5.0  # pause between records when scoring (free-tier rate limits)
 
 @lru_cache
