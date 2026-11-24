@@ -11,6 +11,7 @@ class Settings(BaseSettings):
   model_config = SettingsConfigDict(env_file=PROJECT_ROOT / ".env", extra="ignore")
 
   llm_model: str
+  embedding_model: str  # required: set EMBEDDING_MODEL in .env
   capstone_domain: str = "wealthpilot"
   project_root: Path = PROJECT_ROOT
   llm_temperature: float = 0.0
@@ -18,6 +19,14 @@ class Settings(BaseSettings):
   max_repair_attempts: int = 3	
   llm_max_retries: int = 5
   max_agent_steps: int = 8  # hard cap on model calls per agent run
+  working_memory_budget_tokens: int = 3000  # conversation context allowed before old turns are trimmed
+  working_memory_min_turns: int = 4  # never trim below this many most-recent messages
+  qdrant_collection: str = "policy_docs"
+  chunk_max_chars: int = 1800  # sections longer than this are split on paragraph breaks
+  embedding_batch_size: int = 16
+  embedding_requests_per_minute: int = 80  # free tier allows 100 texts a minute; stay under it
+  embedding_retry_wait_seconds: float = 45.0  # wait after a rate-limit error before retrying
+  embedding_rate_limit_retries: int = 3
   eval_delay_seconds: float = 5.0  # pause between records when scoring (free-tier rate limits)
 
 @lru_cache

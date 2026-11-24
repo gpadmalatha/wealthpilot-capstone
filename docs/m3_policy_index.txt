@@ -1,0 +1,18 @@
+embedding_model: gemini/gemini-embedding-001
+chunks indexed: 111
+chunks per source: adverse-action=8, credit-policy-core=12, doc-verification=12, fair-lending=7, risk-grading=5, sector-auto-components=9, sector-food-processing=9, sector-it-services=8, sector-light-engineering=9, sector-logistics=9, sector-pharma-packaging=8, sector-retail-trade=7, sector-textiles=8
+
+QUERY: What DSCR floor applies to textile loans?   filters: {'source': 'sector-textiles'}
+  0.823  sector-textiles#14.4.3  [sector_policy]  DEBT SERVICE COVERAGE RATIO (DSCR) FLOOR
+  0.748  sector-textiles#14.4.7  [sector_policy]  PORTFOLIO EXPOSURE LIMITS AND SPECIFIC THRESHOLDS
+  0.727  sector-textiles#14.4.1  [sector_policy]  PURPOSE AND APPLICABILITY
+
+QUERY: What DSCR floor applies to textile loans?   filters: none
+  0.823  sector-textiles#14.4.3  [sector_policy]  DEBT SERVICE COVERAGE RATIO (DSCR) FLOOR
+  0.750  sector-food-processing#14.3  [sector_policy]  Debt Service Coverage Ratio (DSCR) Floor
+  0.748  sector-textiles#14.4.7  [sector_policy]  PORTFOLIO EXPOSURE LIMITS AND SPECIFIC THRESHOLDS
+
+QUERY: Which applicant attributes must never influence a credit decision?   filters: {'section_type': 'compliance'}
+  0.766  fair-lending#4.2  [compliance]  PROHIBITED PROTECTED ATTRIBUTES
+  0.701  fair-lending#4.3  [compliance]  PROHIBITED PROXY VARIABLES
+  0.677  fair-lending#0  [compliance]  Overview

@@ -13,6 +13,7 @@ dependencies = [
   "pydantic-settings==2.16.3",
   "python-dotenv==1.2.4",
   "tenacity==9.2.1",  # litellm needs it for num_retries
+  "qdrant-client==1.20.0",
 ]
 
 [project.optional-dependencies]

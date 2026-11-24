@@ -11,7 +11,7 @@ from capstone.tools.assessments import (
 from capstone.tools.lookups import get_bank_statements, get_bureau_report
 
 
-def _spec(function, parameters: dict, required: list[str]) -> dict:
+def build_spec(function, parameters: dict, required: list[str]) -> dict:
   return {
       "type": "function",
       "function": {
@@ -41,17 +41,17 @@ TOOL_FUNCTIONS = {
 }
 
 TOOL_SPECS = [
-    _spec(get_application, {"application_id": _APPLICATION_ID}, ["application_id"]),
-    _spec(get_bureau_report, {"applicant_id": _APPLICANT_ID}, ["applicant_id"]),
-    _spec(
+    build_spec(get_application, {"application_id": _APPLICATION_ID}, ["application_id"]),
+    build_spec(get_bureau_report, {"applicant_id": _APPLICANT_ID}, ["applicant_id"]),
+    build_spec(
         get_bank_statements,
         {"applicant_id": _APPLICANT_ID, "months": {"type": "integer", "description": "Months wanted, default 6"}},
         ["applicant_id"],
     ),
-    _spec(assess_dscr, {"application_id": _APPLICATION_ID}, ["application_id"]),
-    _spec(check_bureau_policy, {"applicant_id": _APPLICANT_ID}, ["applicant_id"]),
-    _spec(check_approval_authority, {"application_id": _APPLICATION_ID}, ["application_id"]),
-    _spec(
+    build_spec(assess_dscr, {"application_id": _APPLICATION_ID}, ["application_id"]),
+    build_spec(check_bureau_policy, {"applicant_id": _APPLICANT_ID}, ["applicant_id"]),
+    build_spec(check_approval_authority, {"application_id": _APPLICATION_ID}, ["application_id"]),
+    build_spec(
         monthly_instalment,
         {
             "principal_inr": {"type": "number", "description": "Loan amount in INR"},
@@ -60,7 +60,7 @@ TOOL_SPECS = [
         },
         ["principal_inr", "annual_rate_pct", "tenor_months"],
     ),
-    _spec(
+    build_spec(
         convert_to_inr,
         {
             "amount": {"type": "number", "description": "Amount in the foreign currency"},
@@ -68,7 +68,7 @@ TOOL_SPECS = [
         },
         ["amount", "currency"],
     ),
-    _spec(
+    build_spec(
         hand_off_to_human,
         {
             "application_id": _APPLICATION_ID,

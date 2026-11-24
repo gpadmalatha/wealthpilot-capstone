@@ -1,4 +1,5 @@
 import logging
+import time
 import warnings
 
 import litellm
@@ -56,4 +57,23 @@ def chat_with_tools(messages: list[dict], tools: list[dict]):
   if choice.finish_reason == "length":
     raise LLMTruncatedError("Reply was cut off; raise the token limit.")
   return choice.message
+
+
+def embed(texts: list[str]) -> list[list[float]]:
+  """Embed texts with the configured embedding model (provider-agnostic, via LiteLLM)."""
+  settings = get_settings()
+  for attempt in range(1, settings.embedding_rate_limit_retries + 2):
+    try:
+      response = litellm.embedding(
+          model=settings.embedding_model,
+          input=texts,
+          timeout=settings.llm_timeout_seconds,
+      )
+      return [item["embedding"] for item in response.data]
+    except litellm.RateLimitError:
+      if attempt > settings.embedding_rate_limit_retries:
+        raise
+      logger.warning("embedding rate limit hit; waiting %.0fs (retry %d)", settings.embedding_retry_wait_seconds, attempt)
+      time.sleep(settings.embedding_retry_wait_seconds)
+  raise RuntimeError("unreachable")
 

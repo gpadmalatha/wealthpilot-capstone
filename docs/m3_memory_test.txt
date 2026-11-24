@@ -1,0 +1,13 @@
+model: gemini/gemini-flash-lite-latest
+PHASE 1 (session s1, applicant ASH-A-00000)
+T1 fact stored PASS: ['location=Tiruppur', 'sector=textile']
+T2 event logged PASS: Called hand_off_to_human with {'reason': 'missing_information', 'summary': 'Application ASH-L-00000 has a bank statement shortfall of 3 months (only 3 of the requested 6 months were retrieved). Escalated to human review due to missing information.', 'application_id': 'ASH-L-00000'}: ok (required_aut
+T3 procedure stored PASS: ['check_sector_note_thresholds=Always check the sector note thresholds before scoring.']
+-- process restart --
+PHASE 2 (new process, new sessions)
+T4 recall fact after restart PASS: Based on the remembered facts for this application, your business is based in Tiruppur.
+T5 recall episode PASS: Based on the recent session history, here is what was done on your application (`ASH-L-00000`) last time:  1. **Assessed DSCR:** Checked the Debt-Service Coverage Ratio, which came out to 1.93, meetin
+T6 procedure applied PASS: Based on your remembered procedure to **always check the sector note thresholds before scoring**, here are the steps I will take in order to process application `ASH-L-00000`:  1. **Check Sector Note 
+T7 changed fact replaced PASS: stored=['Coimbatore']; answer=Based on the updated remembered facts for your application, your business is based in Coimbatore.
+T8 applicant B sees nothing of A PASS: Nothing is stored yet about your business location or our past interactions.
+T9 recall after filler turns PASS: trimmed_messages=30; answer=Coimbatore
