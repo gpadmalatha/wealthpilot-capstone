@@ -9,12 +9,10 @@ The assistant never records a decision. Approvals and declines go through the wo
 """
 import json
 import logging
-import re
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
-
+from capstone.agents.intake_agent import extract_from_text
 from capstone.agents.underwriting_agent import load_prompt
 from capstone.guardrails.input_checks import APPROVAL_PRESSURE, FAIR_LENDING, INJECTION, check_request, looks_like_application, strip_proxies
 from capstone.guardrails.output_checks import enforce
@@ -22,9 +20,9 @@ from capstone.llm.client import chat
 from capstone.observability.tracing import span
 from capstone.rag.answer import answer_question
 from capstone.rag.retrieval import Retriever
-from capstone.schemas.intake import SectorType
+from capstone.schemas.intake import LoanApplication
 from capstone.settings import get_settings
-from capstone.tools.policy_engine import assess_inputs
+from capstone.tools.policy_engine import assess_loan_application
 from capstone.tools.repository import policy_limit, required_authority
 
 logger = logging.getLogger(__name__)
@@ -35,22 +33,6 @@ UNSAFE_FALLBACK = "This reply was withheld because it failed a safety check. A h
 
 ROUTE_AUTO, ROUTE_HUMAN, ROUTE_REFUSE = "auto", "human_review", "refuse"
 OUTCOME_WORDS = {"approvable": "approve", "declined": "decline", "borderline": "borderline"}
-
-
-class ExtractedFacts(BaseModel):
-  model_config = ConfigDict(extra="forbid")
-  sector: Optional[SectorType] = None
-  amount: Optional[int] = Field(default=None, gt=0)
-  tenor: Optional[int] = Field(default=None, gt=0)
-  months_operating: Optional[int] = Field(default=None, ge=0)
-  annual_revenue: Optional[int] = Field(default=None, ge=0)
-  ebitda: Optional[int] = Field(default=None, ge=0)
-  existing_debt: Optional[int] = Field(default=None, ge=0)
-  existing_debt_service: Optional[int] = Field(default=None, ge=0)
-  bureau_score: Optional[int] = Field(default=None, ge=300, le=900)
-  current_assets: Optional[int] = Field(default=None, ge=0)
-  current_liabilities: Optional[int] = Field(default=None, ge=0)
-  collateral: Optional[int] = Field(default=None, ge=0)
 
 
 @dataclass
@@ -124,35 +106,19 @@ class Assistant:
   def underwrite_text(self, text: str) -> AssistantResponse:
     clean, removed = strip_proxies(text)
     flags = [f"proxy_sentences_removed:{removed}"] if removed else []
-    facts = self._extract(clean)
-    if facts is None:
+    application = extract_from_text(clean, self._llm)  # the same validated LoanApplication the workflow uses
+    if application is None:
       return AssistantResponse(ROUTE_HUMAN, "application", "The application could not be read reliably, so it goes to a human underwriter. No decision was made.", flags=flags + ["extraction_failed"])
-    assessment = assess_inputs({**facts.model_dump(), "existing_debt_service": facts.existing_debt_service})
-    rationale = build_rationale(facts, assessment)
+    assessment = assess_loan_application(application)
+    rationale = build_rationale(application, assessment)
     rationale, problems = enforce(rationale, UNSAFE_FALLBACK, check_terms=True)
     if assessment["auto_approve_allowed"] or assessment["auto_decline_allowed"]:
       route = ROUTE_AUTO
     else:
       route = ROUTE_HUMAN
-    slugs = ["credit-policy-core", "risk-grading", f"sector-{facts.sector.lower().replace(' ', '-')}" if facts.sector else None]
+    slugs = ["credit-policy-core", "risk-grading", f"sector-{application.sector.lower().replace(' ', '-')}" if application.sector else None]
     titles = [self._titles[s] for s in slugs if s and s in self._titles]
-    return AssistantResponse(route, "application", rationale, [], titles, assessment, facts.model_dump(), flags + problems)
-
-  def _extract(self, clean_text: str) -> Optional[ExtractedFacts]:
-    """Model extraction with two checks in code: the schema, and every number must appear in the text."""
-    messages = [{"role": "system", "content": load_prompt("application_extract.md")}, {"role": "user", "content": clean_text}]
-    digits = clean_text.replace(",", "")
-    for _ in range(get_settings().max_repair_attempts):
-      reply = self._llm(messages, json_mode=True)
-      try:
-        facts = ExtractedFacts.model_validate(json.loads(reply))
-        invented = [k for k, v in facts.model_dump().items() if isinstance(v, int) and not re.search(rf"(?<!\d){v}(?!\d)", digits)]
-        if invented:
-          raise ValueError(f"these numbers do not appear in the text: {invented}. Use null when a figure is not stated.")
-        return facts
-      except (ValueError, ValidationError) as error:
-        messages += [{"role": "assistant", "content": reply}, {"role": "user", "content": f"Invalid: {error}. Return corrected JSON only."}]
-    return None
+    return AssistantResponse(route, "application", rationale, [], titles, assessment, application.model_dump(mode="json", exclude_none=True), flags + problems)
 
   def _titles_for(self, chunk_ids: list[str]) -> list[str]:
     titles: list[str] = []
@@ -163,11 +129,11 @@ class Assistant:
     return titles
 
 
-def build_rationale(facts: ExtractedFacts, assessment: dict) -> str:
+def build_rationale(application: LoanApplication, assessment: dict) -> str:
   """Decision rationale written by code from financial facts only. Same financials, same words."""
   if assessment.get("missing"):
     return f"The application is incomplete: {', '.join(assessment['missing'])} not stated. Outcome: borderline (INCOMPLETE_APPLICATION). A human underwriter must request the missing figures; no decision was made."
-  authority = required_authority(facts.amount)["authority"]
+  authority = required_authority(application.requested_amount_inr)["authority"]
   if assessment["auto_approve_allowed"]:
     gate = "it is within the automatic approval limit"
   elif assessment["auto_decline_allowed"]:
@@ -178,8 +144,8 @@ def build_rationale(facts: ExtractedFacts, assessment: dict) -> str:
     gate = "it needs human sign-off"
   return (
       f"The proposed loan adds {assessment['proposed_annual_debt_service_inr']:,} rupees of annual debt service at the "
-      f"{policy_limit('assessment_rate_pct'):.0f} percent assessment rate, so DSCR is {facts.ebitda:,} / {assessment['total_annual_debt_service_inr']:,} "
-      f"= {assessment['dscr']:.2f} against a {facts.sector} floor of {assessment['dscr_floor']:.2f}. Grade {assessment['grade']}. "
+      f"{policy_limit('assessment_rate_pct'):.0f} percent assessment rate, so DSCR is {application.declared_financials.ebitda_inr:,} / {assessment['total_annual_debt_service_inr']:,} "
+      f"= {assessment['dscr']:.2f} against a {application.sector} floor of {assessment['dscr_floor']:.2f}. Grade {assessment['grade']}. "
       f"Outcome: {OUTCOME_WORDS[assessment['status']]} ({', '.join(assessment['reason_codes'])}). "
       f"Approval authority for this loan size: {authority}; {gate}."
   )

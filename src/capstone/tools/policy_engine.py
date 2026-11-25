@@ -1,12 +1,13 @@
 """Deterministic underwriting policy engine: Credit Policy Manual section 4 applied to one application.
 
-No model is involved. The workflow, the committee agents and the MCP server all call
-assess_application, so a decision never depends on which entry point asked.
+No model is involved. Every entry point (workflow, committee agents, MCP server, assistant) hands this engine the same
+validated LoanApplication from intake, so a decision never depends on which entry point asked.
 Inputs are financial and bureau facts only. Name, city, community and language are never read here.
 """
-from typing import Optional
+from typing import Optional, Union
 
-from capstone.tools.assessments import _application_and_applicant
+from capstone.agents.intake_agent import load_application
+from capstone.schemas.intake import LoanApplication
 from capstone.tools.calculators import calculate_dscr
 from capstone.tools.lookups import get_bank_statements, get_bureau_report
 from capstone.tools.repository import get_repository, grade_table, policy_limit, sector_table
@@ -130,6 +131,35 @@ def assess_inputs(facts: dict) -> dict:
   }
 
 
+def _as_application(application: Union[LoanApplication, dict]) -> LoanApplication:
+  """Accept the validated object, or a dict that is validated now. Unvalidated facts never reach the engine."""
+  return application if isinstance(application, LoanApplication) else LoanApplication.model_validate(application)
+
+
+def _verified_revenue(applicant_id: str) -> int:
+  return int(get_repository().applicants[applicant_id]["annual_revenue_inr"])
+
+
+def assess_loan_application(application: Union[LoanApplication, dict], bureau: Optional[dict] = None) -> dict:
+  """Apply the credit policy to a validated LoanApplication. A bureau report, if given, supplies the credit facts.
+
+  Returns grade, ratios, reason codes and status. The same function serves stored applications and free-text requests.
+  """
+  application = _as_application(application)
+  facts = application.policy_facts()
+  if bureau:
+    facts.update({
+        "bureau_score": bureau["bureau_score"],
+        "active_trade_lines": bureau["active_trade_lines"],
+        "dpd_90_ever": bureau["dpd_90_ever"],
+        "written_off_amount_inr": bureau["written_off_amount_inr"],
+    })
+  declared = application.declared_financials.annual_revenue_inr if application.declared_financials else None
+  if declared is not None and application.applicant_id in get_repository().applicants:
+    facts["revenue_variance_pct"] = _revenue_variance_pct(declared, _verified_revenue(application.applicant_id))
+  return {"application_id": application.application_id, "applicant_id": application.applicant_id, **assess_inputs(facts)}
+
+
 def assess_application(application_id: str, bureau: Optional[dict] = None) -> dict:
   """Apply the credit policy to one application and return grade, ratios, reason codes and status.
 
@@ -138,26 +168,33 @@ def assess_application(application_id: str, bureau: Optional[dict] = None) -> di
   Returns grade, dscr, leverage_ratio, current_ratio, revenue_variance_pct, reason_codes,
   status, auto_approve_allowed, auto_decline_allowed and requires_human_signoff.
   """
-  application, applicant = _application_and_applicant(application_id)
-  bureau = bureau or get_bureau_report(application["applicant_id"])  # a report pulled earlier may be passed in
-  facts = {
-      "amount": application["requested_amount_inr"],
-      "tenor": application["requested_tenor_months"],
-      "ebitda": applicant["ebitda_inr"],
-      "existing_debt": applicant["existing_debt_inr"],
-      "existing_debt_service": application["existing_annual_debt_service_inr"],
-      "current_assets": application["current_assets_inr"],
-      "current_liabilities": application["current_liabilities_inr"],
-      "collateral": application["collateral_value_inr"],
-      "months_operating": applicant["months_operating"],
-      "sector": applicant["sector"],
-      "bureau_score": bureau["bureau_score"],
-      "active_trade_lines": bureau["active_trade_lines"],
-      "dpd_90_ever": bureau["dpd_90_ever"],
-      "written_off_amount_inr": bureau["written_off_amount_inr"],
-      "revenue_variance_pct": _revenue_variance_pct(int(application["declared_annual_revenue_inr"]), int(applicant["annual_revenue_inr"])),
+  application = load_application(application_id)
+  bureau = bureau or get_bureau_report(application.applicant_id)  # a report pulled earlier may be passed in
+  return assess_loan_application(application, bureau)
+
+
+def verify_loan_application(application: Union[LoanApplication, dict]) -> dict:
+  """Check the declared revenue of a validated LoanApplication against verified revenue and count bank statements."""
+  application = _as_application(application)
+  declared = int(application.declared_financials.annual_revenue_inr)
+  verified = _verified_revenue(application.applicant_id)
+  variance = round(_revenue_variance_pct(declared, verified), 1)
+  if variance > policy_limit("fraud_hold_pct"):
+    flag = "fraud_hold"
+  elif variance > policy_limit("revenue_tolerance_pct"):
+    flag = "doc_mismatch"
+  else:
+    flag = "ok"
+  statements = get_bank_statements(application.applicant_id, months=6)
+  return {
+      "application_id": application.application_id,
+      "declared_revenue_inr": declared,
+      "verified_revenue_inr": verified,
+      "revenue_variance_pct": variance,
+      "revenue_flag": flag,
+      "statement_months_available": statements["months_returned"],
+      "statement_shortfall_months": statements["shortfall_months"],
   }
-  return {"application_id": application_id, "applicant_id": application["applicant_id"], **assess_inputs(facts)}
 
 
 def verify_documents(application_id: str) -> dict:
@@ -166,22 +203,4 @@ def verify_documents(application_id: str) -> dict:
   Use to verify documents before scoring. Do not use for the credit verdict (use assess_application).
   Returns revenue_variance_pct, revenue_flag (ok, doc_mismatch or fraud_hold) and statement coverage.
   """
-  application, applicant = _application_and_applicant(application_id)
-  variance = round(_revenue_variance_pct(int(application["declared_annual_revenue_inr"]), int(applicant["annual_revenue_inr"])), 1)
-  if variance > policy_limit("fraud_hold_pct"):
-    flag = "fraud_hold"
-  elif variance > policy_limit("revenue_tolerance_pct"):
-    flag = "doc_mismatch"
-  else:
-    flag = "ok"
-  statements = get_bank_statements(application["applicant_id"], months=6)
-  return {
-      "application_id": application_id,
-      "declared_revenue_inr": int(application["declared_annual_revenue_inr"]),
-      "verified_revenue_inr": int(applicant["annual_revenue_inr"]),
-      "revenue_variance_pct": variance,
-      "revenue_flag": flag,
-      "statement_months_available": statements["months_returned"],
-      "statement_shortfall_months": statements["shortfall_months"],
-  }
-
+  return verify_loan_application(load_application(application_id))

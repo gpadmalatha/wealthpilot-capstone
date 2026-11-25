@@ -131,3 +131,37 @@ class LoanApplication(BaseModel):
         )
 
     return self
+
+  # ---- how the rest of the system reads the application
+  def policy_facts(self) -> dict:
+    """Flat facts for the policy engine. The engine reads only this view of the validated application."""
+    money = self.declared_financials or FinancialSnapshot()
+    return {
+        "amount": self.requested_amount_inr,
+        "tenor": self.requested_tenor_months,
+        "sector": self.sector,
+        "bureau_score": self.bureau_score,
+        "months_operating": money.months_operating,
+        "annual_revenue": money.annual_revenue_inr,
+        "ebitda": money.ebitda_inr,
+        "existing_debt": money.existing_debt_inr,
+        "existing_debt_service": money.existing_annual_debt_service_inr,
+        "current_assets": money.current_assets_inr,
+        "current_liabilities": money.current_liabilities_inr,
+        "collateral": money.collateral_value_inr,
+    }
+
+  def with_bureau_score(self, score: int) -> "LoanApplication":
+    """A new validated application with the bureau score filled in (and no longer listed as missing)."""
+    data = self.model_dump()
+    data["bureau_score"] = score
+    data["missing_fields"] = [name for name in self.missing_fields if name != "bureau_score"]
+    return LoanApplication(**data)
+
+
+def missing_field_names(application_fields: dict, financial_fields: dict) -> list[str]:
+  """Names of the required fields (and declared financial figures) that were not stated, for missing_fields."""
+  names = [name for name in SCORING_REQUIRED_FIELDS if name != "declared_financials" and application_fields.get(name) is None]
+  names += [name for name in FinancialSnapshot.model_fields if financial_fields.get(name) is None]
+  return names
+

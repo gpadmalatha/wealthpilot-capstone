@@ -13,32 +13,42 @@ from langgraph.types import Command, interrupt
 
 from capstone.observability.tracing import span, start_trace
 from capstone.reliability.fallbacks import CACHE, LIVE, UNAVAILABLE, ResilientBureau, default_bureau
+from capstone.schemas.intake import LoanApplication
 from capstone.schemas.response import run_tool
 from capstone.schemas.state import WorkflowState
 from capstone.settings import get_settings
 from capstone.tools.actions import SYSTEM_ACTOR, hand_off_to_human, record_decision
 from capstone.tools.assessments import get_application
-from capstone.tools.policy_engine import assess_application, verify_documents
+from capstone.tools.policy_engine import assess_loan_application, verify_loan_application
 from capstone.workflows.approvals import review_kind, review_request
 
 logger = logging.getLogger(__name__)
 
 
+def _application(state: WorkflowState) -> LoanApplication:
+  """The one validated application every step reads. State holds its JSON form (so it can be checkpointed)."""
+  return LoanApplication.model_validate(state["application"])
+
+
 def intake(state: WorkflowState) -> dict:
+  """Produce the validated LoanApplication (the intake schema). Every later step reads this object, not raw records."""
   result = run_tool(get_application, application_id=state["application_id"])
   if not result.ok:
     return {"outcome": "intake_failed", "review_error": result.error.message, "trail": ["intake:failed"]}
-  return {"application": result.data, "trail": ["intake"]}
+  application = LoanApplication.model_validate(result.data)
+  return {"application": application.model_dump(mode="json", exclude_none=True), "trail": ["intake"]}
 
 
 def make_bureau_node(bureau: ResilientBureau):
   """Pull the bureau report through retries, a circuit breaker and fallbacks. Say which source answered."""
   def pull_bureau(state: WorkflowState) -> dict:
-    applicant_id = state["application"]["applicant_id"]
-    outcome = bureau.fetch(applicant_id)
+    application = _application(state)
+    outcome = bureau.fetch(application.applicant_id)
     update: dict[str, Any] = {"bureau_source": outcome.status, "bureau_log": outcome.attempts, "trail": [f"pull_bureau:{outcome.status}({outcome.source})"]}
     if outcome.report:
       update["bureau_report"] = outcome.report
+      # the intake object gains the bureau score and no longer lists it as missing
+      update["application"] = application.with_bureau_score(outcome.report["bureau_score"]).model_dump(mode="json", exclude_none=True)
     if outcome.status == UNAVAILABLE:
       # Safe fallback: no bureau data, so no automatic decision. Queue the file for a human instead.
       handoff = run_tool(hand_off_to_human, application_id=state["application_id"], reason="missing_information",
@@ -53,15 +63,15 @@ def after_bureau(state: WorkflowState) -> str:
 
 
 def verify(state: WorkflowState) -> dict:
-  result = run_tool(verify_documents, application_id=state["application_id"])
+  result = run_tool(verify_loan_application, application=state["application"])
   return {"verification": result.data or {}, "trail": ["verify_documents"]}
 
 
 def score(state: WorkflowState) -> dict:
-  arguments = {"application_id": state["application_id"]}
+  arguments = {"application": state["application"]}
   if state.get("bureau_report"):
     arguments["bureau"] = state["bureau_report"]
-  result = run_tool(assess_application, **arguments)
+  result = run_tool(assess_loan_application, **arguments)
   if not result.ok:
     return {"outcome": "unresolved", "review_error": result.error.message, "trail": ["score_risk:failed"]}
   assessment = result.data

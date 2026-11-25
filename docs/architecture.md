@@ -24,6 +24,21 @@ HTTP request (FastAPI)  -- trace id per request
                                                               apply_human_decision: signatory checked in code -> record_decision
 ```
 
+## One application object
+Every application becomes the same validated object, `LoanApplication` (`schemas/intake.py`, the M1 schema), before anything
+else reads it. There are three ways in and one shape out:
+
+| Entry | Function | Model involved |
+|---|---|---|
+| Narrative record (M1 dataset) | `extract_application` | yes, with a repair loop |
+| Free-text request (assistant, API) | `extract_from_text` | yes, plus a check that every number appears in the text |
+| Stored application (workflow, tools) | `load_application` | no |
+
+The workflow keeps this object in its state, the bureau step fills in `bureau_score` (and removes it from `missing_fields`),
+and the policy engine (`assess_loan_application`, `verify_loan_application`) accepts only this object. Unknown keys and
+out-of-range values are rejected by the schema, so facts that never passed intake cannot reach a decision. The `get_application`
+tool returns the same object to the agent. Names, city and language are never part of it.
+
 ## Where each rule lives
 | Rule | Enforced by |
 |---|---|

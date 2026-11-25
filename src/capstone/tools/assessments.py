@@ -25,25 +25,16 @@ def _application_and_applicant(application_id: str) -> tuple[dict, dict]:
 
 
 def get_application(application_id: str) -> dict:
-  """Fetch the facts of one loan application: amount, tenor, sector and declared financials.
+  """Fetch the validated loan application: requested amount and tenor, sector and declared financials.
 
   Use first, to learn the applicant_id, the requested amount and the sector.
   Do not use for bureau or bank-statement data (use get_bureau_report or
-  get_bank_statements). Returns no personal identifiers such as name or city.
+  get_bank_statements). Returns the intake LoanApplication (the same object every other step reads); the bureau
+  score is listed in missing_fields until it is pulled. Returns no personal identifiers such as name or city.
   """
-  application, applicant = _application_and_applicant(application_id)
-  return {
-      "application_id": application_id,
-      "applicant_id": application["applicant_id"],
-      "sector": applicant["sector"],
-      "requested_amount_inr": int(application["requested_amount_inr"]),
-      "requested_tenor_months": int(application["requested_tenor_months"]),
-      "purpose": application["purpose"],
-      "declared_annual_revenue_inr": int(application["declared_annual_revenue_inr"]),
-      "ebitda_inr": int(applicant["ebitda_inr"]),
-      "existing_annual_debt_service_inr": int(application["existing_annual_debt_service_inr"]),
-      "months_operating": int(applicant["months_operating"]),
-  }
+  from capstone.agents.intake_agent import load_application  # local import: intake builds on this module's lookups
+
+  return load_application(application_id).model_dump(mode="json", exclude_none=True)
 
 
 def assess_dscr(application_id: str) -> dict:
