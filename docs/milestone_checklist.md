@@ -1,6 +1,6 @@
 # Milestone checklist
 
-Owner for every milestone: Padma Govindula (team size to be confirmed with the programme). Each row says what meets the rubric, how to reproduce it, and what to look at. Behaviour items point to a committed run output.
+Owner for every milestone: Padma Govindula (individual submission; no other contributors). Each row says what meets the rubric, how to reproduce it, and what to look at. Behaviour items point to a committed run output.
 
 | Milestone | Acceptance evidence | Command | Committed output | Known limitations |
 |---|---|---|---|---|
