@@ -69,7 +69,7 @@ def score(state: WorkflowState) -> dict:
     route = "human_review"  # fraud is never decided automatically, even if the file is also a clear decline
   elif state.get("bureau_source") == CACHE:
     route = "human_review"  # decisions on a stale bureau report are never automatic
-  elif assessment["status"] == "declined":
+  elif assessment["auto_decline_allowed"]:
     route = "auto_decline"
   elif assessment["auto_approve_allowed"]:
     route = "auto_approve"
@@ -88,7 +88,7 @@ def _record(state: WorkflowState, outcome: str, decided_by: str, note: str) -> d
 
 
 def auto_decline(state: WorkflowState) -> dict:
-  result = _record(state, "declined", SYSTEM_ACTOR, "Clear policy decline (credit policy 4.07).")
+  result = _record(state, "declined", SYSTEM_ACTOR, "Operating history under 24 months (credit policy 4.02.3).")
   return {"decision": result.data or {}, "outcome": "declined" if result.ok else "unresolved", "trail": ["auto_decline"]}
 
 

@@ -5,7 +5,8 @@ from capstone.tools import actions
 from capstone.workflows import graph as wf
 from capstone.workflows.checkpoints import open_checkpointer
 
-AUTO_DECLINE = "ASH-L-00000"      # 900,000, clear decline
+AUTO_DECLINE = "ASH-L-00057"      # 200,000, operating 6 months: the one decline the system issues itself (policy 4.02.3)
+DSCR_DECLINE = "ASH-L-00000"      # 900,000, declined on bureau grounds: needs human sign-off (policy 4.08.2)
 AUTO_APPROVE = "ASH-L-00005"      # 350,000, clean
 BORDERLINE = "ASH-L-00006"        # 550,000, borderline
 FRAUD = "ASH-L-00017"             # 200,000, revenue mismatch above 25 percent
@@ -124,3 +125,20 @@ def test_unknown_application_ends_cleanly(env):
   graph, _ = env
   result = wf.start(graph, "ASH-L-99999")
   assert result["status"] == "done" and result["outcome"] == "intake_failed"
+
+
+def test_other_declines_need_a_human_and_cannot_be_approved(env):
+  graph, tmp = env
+  waiting = wf.start(graph, DSCR_DECLINE)
+  assert waiting["status"] == "waiting" and waiting["request"]["kind"] == "decline_signoff"
+  assert waiting["request"]["allowed_outcomes"] == ["declined"]
+  refused = wf.resume(graph, DSCR_DECLINE, {"outcome": "approved", "decided_by": "ASH-U-001"})
+  assert refused["status"] == "waiting" and refused["request"]["error"]
+  done = wf.resume(graph, DSCR_DECLINE, {"outcome": "declined", "decided_by": "ASH-U-001"})
+  assert done["outcome"] == "declined" and done["decision"]["decided_by"] == "ASH-U-001"
+
+
+def test_system_may_not_decline_outside_the_operating_history_rule(tmp_path, monkeypatch):
+  monkeypatch.setattr(actions, "_decision_file", lambda: tmp_path / "decisions.jsonl")
+  with pytest.raises(ValueError):
+    actions.record_decision(DSCR_DECLINE, "declined", "system")

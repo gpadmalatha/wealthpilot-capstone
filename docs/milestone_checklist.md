@@ -1,3 +1,21 @@
 # Milestone checklist
 
-TODO: For M1-M8 record acceptance evidence, commands, test results, limitations and responsible team member. Use the root README mapping.
+Owner for every milestone: Padma Govindula (team size to be confirmed with the programme). Each row says what meets the rubric, how to reproduce it, and what to look at. Behaviour items point to a committed run output.
+
+| Milestone | Acceptance evidence | Command | Committed output | Known limitations |
+|---|---|---|---|---|
+| M1 Provider-agnostic client and structured intake | One LiteLLM adapter; model and settings from `.env`; typed `LoanApplication` and `FinancialSnapshot` with cross-field validators; bounded repair loop; downstream code uses the validated object | `python scripts\evaluate_intake.py`, `python -m pytest tests\unit -q` | `docs/m1_intake_results.txt` | Provider-swap latency and cost table not produced (optional advanced item) |
+| M2 Tool-enabled single agent | Tools for DSCR, interest and currency, bureau, bank statements and hand-off; structured results and errors; bounded loop with stop reasons; limits enforced in code; idempotent hand-off | `python scripts\run_m2_agent.py` | `docs/m2_run_output.txt` | Hand-off reasons are a fixed list |
+| M3 Persistent memory and semantic index | Working (token budget), episodic, semantic and procedural memory in SQLite, namespaced per applicant; Qdrant index over 13 policy documents; memory test T1 to T9 all pass across a restart | `python scripts\build_policy_index.py`, `python scripts\run_memory_test.py` | `docs/m3_policy_index.txt`, `docs/m3_memory_test.txt` | Local Qdrant on disk, not a server |
+| M4 Production RAG and evaluation | Structure-aware chunking; hybrid retrieval and reranker whose order is used; grounded answers with code-checked citations and abstention; 29-question golden set; baseline and changes scored on the same set | `python scripts\evaluate_rag.py` | `docs/m4_evaluation.txt` | Hybrid did not beat vector-only here; reranker gave a small gain (MRR 0.936 to 0.974) |
+| M5 LangGraph routing and human interrupt | Intake, document verification, risk scoring and conditional routing; interrupt persisted in SQLite and resumed from a second process; resume records no duplicate decision; signatory checked in code; only the under-24-months decline is automatic (policy 4.02.3, 4.08.2) | `python scripts\check_policy_engine.py`, `python scripts\run_m5_workflow.py` | `docs/m5_policy_engine_check.txt` (350/350), `docs/m5_workflow_run.txt` | Document verification uses revenue variance; bank statement shortfall is informational |
+| M6 Committee and MCP | Analyst, Risk Reviewer, Compliance Reviewer with a bounded loop (3 rounds) and a deterministic policy guard; reviewer escalation shown on a real model (fraud hold); bureau and bank tools over MCP calling the same functions | `python scripts\run_m6_committee.py` | `docs/m6_committee_run.txt` | The committee is advisory. No real-model run showed a "revise" round; that path is covered by unit tests with a fake model |
+| M7 Observability and reliability | One trace per request covering nodes, tools, model calls and dependencies; bounded retries with backoff; circuit breaker; fallback chain (backup source over MCP, cached report, human queue); bureau outage never produces an automatic decision | `python scripts\run_m7_reliability.py` | `docs/m7_reliability_run.txt`, `docs/m7_trace_sample.jsonl` | Local JSON-lines tracer; no LangFuse export |
+| M8 Evaluation, guardrails, API and deployment | 20-case evaluation: 18 of 20 pass, 3 of 3 matched bias pairs identical; input, action and output guardrails; FastAPI service with API-key protection; Dockerfile and compose | `python scripts\run_final_evaluation.py`, `python scripts\demo_api.py` | `docs/m8_evaluation_results.txt`, `docs/m8_api_demo.txt`, `docs/evaluation_report.md` | Two failed cases explained in the report; Docker files not built; the golden set was visible during development |
+
+## Hygiene checks
+- Secrets: none in the repository. `.env` is git-ignored and `.env.example` has placeholders only. A key that was exposed during development must be rotated in the provider console and the old key deleted.
+- Model names, base URLs and thresholds live in `settings.py` and `.env`; no model literal at any call site.
+- No absolute paths; `settings.py` derives the project root.
+- No `print()` in agent or service code (scripts print).
+- No stubs: unused scaffold modules were deleted.

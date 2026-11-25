@@ -11,7 +11,7 @@ from capstone.workflows import graph as wf
 from capstone.workflows.checkpoints import open_checkpointer
 
 AUTO_APPROVE = "ASH-L-00005"  # applicant ASH-A-00005, clean small approval
-AUTO_DECLINE = "ASH-L-00000"
+AUTO_DECLINE = "ASH-L-00057"
 BORDERLINE = "ASH-L-00006"
 
 

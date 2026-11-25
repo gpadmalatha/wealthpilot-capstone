@@ -1,30 +1,61 @@
-# Applied AI Capstone Starter
+# WealthPilot: SME Loan Underwriting and Credit Research Assistant
 
-**Applied AI Professional Certification Program · IIT Hyderabad**
+**Applied AI Professional Certification Program · IIT Hyderabad · Capstone PS3**
 
-An empty Python source-project scaffold for CareFlow, LexOps, WealthPilot,
-ShopSense and PlantGuard. Use one copy per team and implement the selected
-problem statement progressively across milestones M1–M8.
+WealthPilot helps credit analysts at a fictional lender (Ashva Capital) assess
+small-business loan applications against the Credit Policy Manual. Code makes
+every policy decision; models read documents, answer policy questions and give
+advisory opinions. Humans sign off every decision except one narrow, policy-allowed
+automatic decline.
 
-## 1. What this project provides
+## Status
 
-- Importable package directories and empty Python modules with responsibility notes.
-- Separate folders for prompts, configuration, data, workflow state, evaluation and tests.
-- Data placeholders for all five toolkit domains, including the corpus, intake,
-  mock API and evaluation folders.
-- A shared milestone map and a domain-specific M1–M8 implementation guide below.
-- Git exclusions that retain scaffold folders while excluding data and secrets.
+All milestones M1 to M8 are implemented with committed run output.
+See `docs/milestone_checklist.md` for the evidence table and
+`docs/evaluation_report.md` for results (18 of 20 golden cases pass; 3 of 3 matched
+bias pairs identical; two failures explained, not tuned away).
 
-**This is a structure reference, not an implemented solution.** There are no
-agents, API endpoints, tool functions, data loaders, evaluation metrics or
-working deployment files yet. Python modules contain docstrings only; scripts
-perform no operations. No generated records, PDFs, API keys or vendor libraries
-are bundled. Do not interpret a successful import as a working milestone.
+| Document | Purpose |
+|---|---|
+| `docs/architecture.md` | Request flow, rule-to-enforcement table, components, failure behaviour |
+| `docs/data_sources.md` | Dataset versions, seed, counts and checksums |
+| `docs/demo_steps.md` | Setup, start the service, sample requests, approval walkthrough |
+| `docs/evaluation_report.md` | Evaluation method, results, failed cases, limitations |
+| `docs/milestone_checklist.md` | M1 to M8 acceptance evidence and commands |
 
-Assumptions: one project per team, Python 3.12+, FastAPI for
-final packaging, and the stack in the supplied problem statements: LiteLLM,
-Qdrant, LangGraph, MCP and LangFuse. Cohort dates are intentionally omitted;
-follow your current programme schedule and assessment instructions.
+## Quick start (Windows Command Prompt)
+
+```
+python -m venv C:\venvs\wealthpilot
+C:\venvs\wealthpilot\Scripts\activate
+pip install -e ".[dev]"
+copy .env.example .env
+```
+
+Put your own model API key in `.env` (never commit it). Then:
+
+```
+python -m pytest tests\unit -q
+python scripts\check_policy_engine.py
+uvicorn capstone.api.main:get_app --factory
+```
+
+Full instructions, including the approval and resume walkthrough, are in
+`docs/demo_steps.md`. Docker files are included but were not built in the
+development environment.
+
+## Known limitations
+
+Two evaluation cases fail (EV-910 scorer strictness, EV-905 expected route);
+the golden set was visible during development; tracing is a local JSON-lines
+sink, not LangFuse; Docker is unverified. Details are in the evaluation report.
+
+---
+
+# Original scaffold guide (programme starter notes)
+
+The sections below are the programme's starter notes and milestone map,
+kept for reference.
 
 ## 2. Start using the scaffold
 

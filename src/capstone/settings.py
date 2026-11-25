@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from functools import lru_cache
+from typing import Optional
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -28,6 +29,8 @@ class Settings(BaseSettings):
   breaker_failure_threshold: int = 3  # failed calls (after retries) before a circuit opens
   breaker_reset_seconds: float = 30.0  # cool-down before one trial call is allowed
   bureau_cache_max_age_hours: float = 72.0  # a cached bureau report older than this is not used
+  abstain_near_miss_score: float = 2.0  # an unanswerable question whose best source scores at least this is routed to the policy team; below it is refused
+  api_key: Optional[str] = None  # set API_KEY in .env to enable state-changing endpoints
   working_memory_budget_tokens: int = 3000  # conversation context allowed before old turns are trimmed
   working_memory_min_turns: int = 4  # never trim below this many most-recent messages
   qdrant_collection: str = "policy_docs"

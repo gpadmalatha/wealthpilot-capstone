@@ -133,8 +133,8 @@ def record_decision(application_id: str, outcome: str, decided_by: str, note: st
       raise ValueError("This application cannot be approved: it is policy-declined or under a fraud hold.")
     if automated and not assessment["auto_approve_allowed"]:
       raise ValueError("Automated approval is not permitted for this application; a named signatory is required.")
-  if outcome == "declined" and automated and (assessment["status"] != "declined" or "FRAUD_HOLD" in reasons):
-    raise ValueError("Only a clear policy decline may be declined automatically.")
+  if outcome == "declined" and automated and not assessment["auto_decline_allowed"]:
+    raise ValueError("Policy 4.08: only an operating-history decline is issued automatically; every other decline needs human sign-off.")
   if outcome == "referred_to_siu" and "FRAUD_HOLD" not in reasons:
     raise ValueError("Only a fraud hold can be referred to the Special Investigation Unit.")
   if not automated:

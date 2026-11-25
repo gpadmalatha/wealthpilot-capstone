@@ -5,6 +5,7 @@ ALLOWED_OUTCOMES = {
     "fraud_hold": ("referred_to_siu", "declined"),
     "borderline": ("approved", "declined"),
     "signoff": ("approved", "declined"),
+    "decline_signoff": ("declined",),
     "bureau_stale": ("approved", "declined"),
 }
 
@@ -14,6 +15,8 @@ def review_kind(assessment: dict) -> str:
     return "fraud_hold"
   if assessment["status"] == "borderline":
     return "borderline"
+  if assessment["status"] == "declined":
+    return "decline_signoff"
   return "signoff"
 
 

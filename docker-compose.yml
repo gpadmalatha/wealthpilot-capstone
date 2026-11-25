@@ -1,2 +1,17 @@
-# TODO M8: Define the application and required services/volumes.
-# This placeholder contains no services and cannot start the application.
+# Start:  docker compose up --build
+# Secrets come from .env (never baked into the image). data/ is the generated WealthPilot dataset; runtime/ keeps
+# decisions, checkpoints, traces and the policy index across restarts.
+services:
+  api:
+    build: .
+    image: wealthpilot:1.0
+    env_file:
+      - .env
+    environment:
+      CAPSTONE_DOMAIN: wealthpilot
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data:ro
+      - ./runtime:/app/runtime
+    restart: unless-stopped

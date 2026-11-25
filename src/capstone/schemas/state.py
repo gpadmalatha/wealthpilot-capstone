@@ -12,7 +12,7 @@ class WorkflowState(TypedDict, total=False):
   verification: dict
   assessment: dict
   route: str  # auto_decline | auto_approve | human_review
-  review_kind: str  # fraud_hold | borderline | signoff | bureau_stale
+  review_kind: str  # fraud_hold | borderline | signoff | decline_signoff | bureau_stale
   committee: dict  # advisory memo from the committee (M6); never a decision
   human_input: dict  # what the reviewer sent back when the workflow resumed
   review_error: Optional[str]

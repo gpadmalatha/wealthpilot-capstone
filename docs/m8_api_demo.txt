@@ -1,0 +1,36 @@
+
+1. Health check
+  -> HTTP 200 {"status": "ok"}
+
+2. Policy question (grounded answer with citations)
+  -> HTTP 200 {"route": "auto", "answer": "The applicant business must demonstrate a continuous minimum operating history of 24 months prior to the date of application, verified via primary incorporation documents, tax registration certificates, and continuous bank statement analysis covering the full 24-month period. Any application for a business operating for less than 24 months is declined automatically.", "citations": ["credit-policy-core#4.02"], "cited_titles": ["Ashva Capital Credit Policy Manual: Core Underwriting Standards"]}
+
+3. Prompt injection is refused
+  -> HTTP 200 {"route": "refuse", "answer": "I can't follow instructions that try to change how I work. Please ask a policy or underwriting question.", "flags": ["prompt_injection_pattern"]}
+
+4. Pressure to approve without a signature is refused
+  -> HTTP 200 {"route": "human_review", "answer": "I can't approve this on a verbal agreement. A loan above 5,000,000 rupees needs a named human signatory from the Board Credit Committee before approval, not after. The file stays with the credit team until that signature is recorded.", "citations": ["credit-policy-core#4.10", "credit-policy-core#4.08"]}
+
+5. Underwrite without the API key is rejected
+  -> HTTP 401 {"detail": "Invalid or missing API key."}
+
+6. Clean small loan: approved automatically
+  -> HTTP 200 {"status": "done", "outcome": "approved", "trail": ["intake", "pull_bureau:live(bureau_primary)", "verify_documents", "score_risk->auto_approve", "auto_approve"]}
+
+7. Loan above 1,000,000 rupees: pauses for a human
+  -> HTTP 200 {"status": "waiting", "request": {"kind": "signoff", "application_id": "ASH-L-00046", "requested_amount_inr": 1800000, "grade": "B1", "dscr": 3.07, "reason_codes": ["APPROVED_STANDARD"], "bureau_source": "live", "allowed_outcomes": ["approved", "declined"], "committee": null, "error": null}, "trail": ["intake", "pull_bureau:live(bureau_primary)", "verify_documents", "score_risk->human_review"]}
+
+8. Status while paused
+  -> HTTP 200 {"waiting": true, "outcome": null, "trail": ["intake", "pull_bureau:live(bureau_primary)", "verify_documents", "score_risk->human_review"]}
+
+9. A Credit Officer tries to sign a 1.8 million loan (rejected in code)
+  -> HTTP 200 {"status": "waiting", "request": {"kind": "signoff", "application_id": "ASH-L-00046", "requested_amount_inr": 1800000, "grade": "B1", "dscr": 3.07, "reason_codes": ["APPROVED_STANDARD"], "bureau_source": "live", "allowed_outcomes": ["approved", "declined"], "committee": null, "error": "A Credit Officer cannot sign a loan of 1800000 rupees; it needs Credit Committee."}}
+
+10. A Credit Committee member signs (accepted)
+  -> HTTP 200 {"status": "done", "outcome": "approved", "decision": {"application_id": "ASH-L-00046", "applicant_id": "ASH-A-00046", "outcome": "approved", "decided_by": "ASH-U-013", "grade": "B1", "reason_codes": ["APPROVED_STANDARD"], "requested_amount_inr": 1800000, "note": "demo", "created_at": "2026-11-25T09:25:48.982277+00:00"}}
+
+11. Second decision on the same application is refused
+  -> HTTP 409 {"detail": "This application is not waiting for a human decision."}
+
+12. Unknown application
+  -> HTTP 404 {"detail": "Unknown application 'NOPE'."}

@@ -17,7 +17,8 @@ from capstone.workflows import graph as wf
 from capstone.workflows.checkpoints import open_checkpointer
 
 CASES = {
-    "ASH-L-00000": "clear decline",
+    "ASH-L-00057": "operating 6 months: automatic decline (policy 4.02.3)",
+    "ASH-L-00000": "declined on bureau grounds: needs human sign-off (policy 4.08.2)",
     "ASH-L-00005": "clean, small",
     "ASH-L-00006": "borderline",
     "ASH-L-00017": "revenue mismatch over 25 percent (fraud hold)",
@@ -25,6 +26,10 @@ CASES = {
     "ASH-L-00029": "approvable, 8.5 million",
 }
 ANSWERS = {  # what the human reviewers say when the second process resumes the paused runs
+    "ASH-L-00000": [
+        {"outcome": "approved", "decided_by": "ASH-U-001", "note": "Trying to approve a policy decline."},
+        {"outcome": "declined", "decided_by": "ASH-U-001", "note": "Decline confirmed."},
+    ],
     "ASH-L-00006": [{"outcome": "declined", "decided_by": "ASH-U-001", "note": "Thin margins; decline."}],
     "ASH-L-00017": [
         {"outcome": "approved", "decided_by": "ASH-U-001", "note": "Trying to approve a fraud hold."},
