@@ -8,21 +8,21 @@ get_bureau_report(NOPE) via MCP: ok=False error=not_found
 
 === ASH-L-00006 [borderline (thin file, sector cap)]
 outcome=agreed final_recommendation=refer rounds=1
-  round 1: analyst says refer: The policy status is borderline and requires human signoff with auto approval not allowed, driven by reason codes THIN_FILE and SECTOR_CAP. However, the applica
+  round 1: analyst says refer: The policy engine status is borderline and requires human sign-off with reason codes THIN_FILE and SECTOR_CAP. Additionally, the bureau report shows 3 instances
     policy_guard: accept (-)
     risk_reviewer: accept (-)
     compliance_reviewer: accept (-)
 
 === ASH-L-00017 [revenue mismatch over 25 percent (fraud hold)]
-outcome=agreed final_recommendation=decline rounds=1
-  round 1: analyst says decline: The application cannot be approved because the policy engine status is borderline with a FRAUD_HOLD and DOC_MISMATCH reason codes. Specifically, verified revenu
+outcome=escalated final_recommendation=refer rounds=1
+  round 1: analyst says refer: The policy status is borderline and requires human signoff. Crucially, the reason codes include FRAUD_HOLD due to a revenue discrepancy where declared revenue o
     policy_guard: accept (-)
-    risk_reviewer: accept (-)
+    risk_reviewer: escalate (The evidence pack contains a FRAUD_HOLD flag and revenue mismatch indicating a serious risk of fraud. Per committee rules, suspected fraud and FRAUD_HOLD conditions are beyond standard credit committe)
     compliance_reviewer: accept (-)
 
 === ASH-L-00046 [approvable, needs Credit Committee sign-off]
 outcome=agreed final_recommendation=refer rounds=1
-  round 1: analyst says refer: The policy engine status is approvable with reason code APPROVED_STANDARD, but auto-approve is not allowed and human signoff is required. Financial metrics are 
+  round 1: analyst says refer: The policy engine has evaluated the application as approvable with a grade of B1, strong DSCR of 3.07, and zero revenue variance. However, auto-approve is not a
     policy_guard: accept (-)
     risk_reviewer: accept (-)
     compliance_reviewer: accept (-)

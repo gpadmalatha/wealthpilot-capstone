@@ -120,3 +120,9 @@ def test_workflow_survives_a_committee_failure(tmp_path, monkeypatch):
     raise RuntimeError("boom")
   graph = wf.build_graph(open_checkpointer(tmp_path / "wf.db"), committee=broken)
   assert wf.start(graph, BORDERLINE)["status"] == "waiting"
+
+
+def test_guard_requires_refer_for_a_fraud_hold():
+  decline = {"recommendation": "decline", "rationale": "Revenue does not match documents.", "key_facts": []}
+  result = cm.run_committee("ASH-L-00017", llm=Script(decline, ACCEPT, ACCEPT), fetch=_fake_external)
+  assert result.outcome == "rejected" and result.final_recommendation == "refer"

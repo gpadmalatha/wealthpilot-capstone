@@ -82,6 +82,8 @@ def policy_guard(memo: AnalystMemo, evidence: dict, round_number: int) -> Review
   issues: list[str] = []
   if memo.recommendation == "approve" and (policy["status"] == "declined" or "FRAUD_HOLD" in policy["reason_codes"]):
     issues.append(f"Policy status is {policy['status']} with reasons {policy['reason_codes']}; the memo may not recommend approval.")
+  if "FRAUD_HOLD" in policy["reason_codes"] and memo.recommendation != "refer":
+    issues.append("A fraud hold must be referred to the Special Investigation Unit; the committee may only recommend 'refer'.")
   text = " ".join([memo.rationale, *memo.key_facts, *memo.conditions]).lower()
   found = sorted({term for term in PROHIBITED_TERMS if re.search(rf"\b{term}", text)})
   if found:
