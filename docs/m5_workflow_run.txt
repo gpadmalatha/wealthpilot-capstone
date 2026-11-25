@@ -1,0 +1,58 @@
+PROCESS 1: starting 6 applications
+- ASH-L-00000 [clear decline]
+  ASH-L-00000: done  trail=['intake', 'verify_documents', 'score_risk->auto_decline', 'auto_decline']
+      outcome=declined decided_by=system
+- ASH-L-00005 [clean, small]
+  ASH-L-00005: done  trail=['intake', 'verify_documents', 'score_risk->auto_approve', 'auto_approve']
+      outcome=approved decided_by=system
+- ASH-L-00006 [borderline]
+  ASH-L-00006: waiting  trail=['intake', 'verify_documents', 'score_risk->human_review']
+      waiting for a borderline review, allowed=['approved', 'declined'], error=None
+- ASH-L-00017 [revenue mismatch over 25 percent (fraud hold)]
+  ASH-L-00017: waiting  trail=['intake', 'verify_documents', 'score_risk->human_review']
+      waiting for a fraud_hold review, allowed=['referred_to_siu', 'declined'], error=None
+- ASH-L-00046 [approvable, 1.8 million]
+  ASH-L-00046: waiting  trail=['intake', 'verify_documents', 'score_risk->human_review']
+      waiting for a signoff review, allowed=['approved', 'declined'], error=None
+- ASH-L-00029 [approvable, 8.5 million]
+  ASH-L-00029: waiting  trail=['intake', 'verify_documents', 'score_risk->human_review']
+      waiting for a signoff review, allowed=['approved', 'declined'], error=None
+
+PROCESS 2: a brand new Python process, same checkpoint database
+- ASH-L-00006: still waiting on disk = True
+    human answers: declined by ASH-U-001
+  ASH-L-00006: done  trail=['intake', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:ok']
+      outcome=declined decided_by=ASH-U-001
+- ASH-L-00017: still waiting on disk = True
+    human answers: approved by ASH-U-001
+  ASH-L-00017: waiting  trail=['intake', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected']
+      waiting for a fraud_hold review, allowed=['referred_to_siu', 'declined'], error=This application cannot be approved: it is policy-declined or under a fraud hold.
+    human answers: referred_to_siu by ASH-U-001
+  ASH-L-00017: done  trail=['intake', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected', 'human_review', 'apply_human_decision:ok']
+      outcome=referred_to_siu decided_by=ASH-U-001
+- ASH-L-00046: still waiting on disk = True
+    human answers: approved by ASH-U-001
+  ASH-L-00046: waiting  trail=['intake', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected']
+      waiting for a signoff review, allowed=['approved', 'declined'], error=A Credit Officer cannot sign a loan of 1800000 rupees; it needs Credit Committee.
+    human answers: approved by ASH-U-013
+  ASH-L-00046: done  trail=['intake', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected', 'human_review', 'apply_human_decision:ok']
+      outcome=approved decided_by=ASH-U-013
+- ASH-L-00029: still waiting on disk = True
+    human answers: approved by ASH-U-013
+  ASH-L-00029: waiting  trail=['intake', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected']
+      waiting for a signoff review, allowed=['approved', 'declined'], error=A Credit Committee cannot sign a loan of 8500000 rupees; it needs Board Credit Committee.
+    human answers: approved by ASH-U-019
+  ASH-L-00029: done  trail=['intake', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected', 'human_review', 'apply_human_decision:ok']
+      outcome=approved decided_by=ASH-U-019
+
+Duplicate resume of ASH-L-00006 (must not record a second decision):
+  returned status=done outcome=declined (nothing new was run)
+
+Decisions on disk: 6 (one per application, no duplicates)
+  ASH-L-00000: declined by system grade=D2
+  ASH-L-00005: approved by system grade=B1
+  ASH-L-00006: declined by ASH-U-001 grade=B1
+  ASH-L-00017: referred_to_siu by ASH-U-001 grade=C1
+  ASH-L-00046: approved by ASH-U-013 grade=B1
+  ASH-L-00029: approved by ASH-U-019 grade=B1
+Unique applications: 6 of 6 records

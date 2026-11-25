@@ -1,1 +1,1 @@
-"""Capstone package scaffold."""
+"""Underwriting workflow: graph, approvals and checkpoints."""

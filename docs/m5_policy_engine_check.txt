@@ -1,0 +1,5 @@
+applications checked: 350
+grade matches:        350/350
+status matches:       350/350
+reason codes match:   350/350
+auto-approve matches: 350/350

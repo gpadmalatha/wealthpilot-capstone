@@ -19,6 +19,8 @@ class Settings(BaseSettings):
   max_repair_attempts: int = 3	
   llm_max_retries: int = 5
   max_agent_steps: int = 8  # hard cap on model calls per agent run
+  max_approval_attempts: int = 3  # rejected human decisions before a case is escalated as unresolved
+  max_committee_rounds: int = 3  # analyst/reviewer revision rounds before the committee gives up
   working_memory_budget_tokens: int = 3000  # conversation context allowed before old turns are trimmed
   working_memory_min_turns: int = 4  # never trim below this many most-recent messages
   qdrant_collection: str = "policy_docs"
@@ -27,6 +29,11 @@ class Settings(BaseSettings):
   embedding_requests_per_minute: int = 80  # free tier allows 100 texts a minute; stay under it
   embedding_retry_wait_seconds: float = 45.0  # wait after a rate-limit error before retrying
   embedding_rate_limit_retries: int = 3
+  retrieval_top_k: int = 5  # chunks passed on to the answerer / scored
+  retrieval_candidates: int = 20  # chunks fetched from each retriever before fusion
+  rrf_k: int = 60  # reciprocal-rank-fusion constant
+  rerank_candidates: int = 10  # fused candidates sent to the reranker
+  rerank_min_score: float = 4.0  # below this top score the answerer abstains (0-10 scale)
   eval_delay_seconds: float = 5.0  # pause between records when scoring (free-tier rate limits)
 
 @lru_cache

@@ -1,0 +1,48 @@
+model: gemini/gemini-flash-lite-latest
+embedding_model: gemini/gemini-embedding-001
+golden questions: 29 (26 answerable, scored at k=3)
+
+configuration                              precision@3  recall@3  MRR
+baseline: vector only                      0.359        0.962     0.936
+change: hybrid (vector + BM25, fused)      0.359        0.942     0.917
+extra: hybrid + reranker                   0.359        0.962     0.974
+
+Per-question first-hit detail (expected section -> where it ranked):
+  baseline: vector only: recall<1 for ["RG-17 (got ['doc-verification#4.3', 'doc-verification#4.4'])", "RG-28 (got ['credit-policy-core#4.08', 'risk-grading#4.4', 'credit-policy-core#4.10'])"]
+  change: hybrid (vector + BM25, fused): recall<1 for ["RG-16 (got ['sector-textiles#0', 'sector-textiles#14.4.1', 'sector-textiles#14.4.4'])", "RG-28 (got ['credit-policy-core#4.08', 'credit-policy-core#4.10', 'risk-grading#4.2'])"]
+  extra: hybrid + reranker: recall<1 for ["RG-17 (got ['doc-verification#4.4', 'doc-verification#4.5', 'doc-verification#4.3'])", "RG-28 (got ['credit-policy-core#4.08', 'credit-policy-core#4.10', 'risk-grading#4.4'])"]
+
+GROUNDED ANSWERS (hybrid + reranker):
+  RG-01 OK   grounded=True facts=True cited_expected=True cites=['risk-grading#4.1']
+  RG-02 OK   grounded=True facts=True cited_expected=True cites=['credit-policy-core#4.02']
+  RG-03 OK   grounded=True facts=True cited_expected=True cites=['credit-policy-core#4.09']
+  RG-04 OK   grounded=True facts=True cited_expected=True cites=['credit-policy-core#4.04']
+  RG-05 OK   grounded=True facts=True cited_expected=True cites=['sector-logistics#4.12.2']
+  RG-06 OK   grounded=True facts=True cited_expected=True cites=['sector-food-processing#14.2', 'sector-light-engineering#14.2']
+  RG-07 OK   grounded=True facts=True cited_expected=True cites=['sector-textiles#14.4.3', 'sector-textiles#14.4.7']
+  RG-08 OK   grounded=True facts=True cited_expected=True cites=['risk-grading#4.1']
+  RG-09 OK   grounded=True facts=True cited_expected=True cites=['doc-verification#4.4']
+  RG-10 OK   grounded=True facts=True cited_expected=True cites=['fair-lending#4.4']
+  RG-11 OK   grounded=True facts=True cited_expected=True cites=['fair-lending#4.3']
+  RG-12 OK   grounded=True facts=True cited_expected=True cites=['adverse-action#14.2']
+  RG-13 OK   grounded=True facts=True cited_expected=True cites=['doc-verification#4.4']
+  RG-14 OK   abstained=True by=low_relevance cites=[]
+  RG-15 OK   abstained=True by=low_relevance cites=[]
+  RG-16 OK   grounded=True facts=True cited_expected=True cites=['sector-textiles#14.4.7']
+  RG-17 OK   grounded=True facts=True cited_expected=True cites=['doc-verification#4.3', 'doc-verification#4.4']
+  RG-18 OK   grounded=True facts=True cited_expected=True cites=['sector-food-processing#14.8']
+  RG-19 OK   grounded=True facts=True cited_expected=True cites=['sector-light-engineering#14.6']
+  RG-20 OK   grounded=True facts=True cited_expected=True cites=['sector-textiles#14.4.4']
+  RG-21 OK   grounded=True facts=True cited_expected=True cites=['credit-policy-core#4.05']
+  RG-22 OK   grounded=True facts=True cited_expected=True cites=['credit-policy-core#4.05', 'sector-pharma-packaging#14.8.4']
+  RG-23 OK   grounded=True facts=True cited_expected=True cites=['credit-policy-core#4.10']
+  RG-24 OK   grounded=True facts=True cited_expected=True cites=['sector-logistics#4.12.4']
+  RG-25 OK   grounded=True facts=True cited_expected=True cites=['sector-auto-components#14.3']
+  RG-26 OK   grounded=True facts=True cited_expected=True cites=['credit-policy-core#4.06']
+  RG-27 OK   grounded=True facts=True cited_expected=True cites=['credit-policy-core#4.03', 'risk-grading#4.1']
+  RG-28 OK   grounded=True facts=True cited_expected=True cites=['credit-policy-core#4.08', 'risk-grading#4.4']
+  RG-29 OK   abstained=True by=low_relevance cites=[]
+
+answerable questions grounded, correct and cited: 26/26
+unanswerable questions correctly refused: 3/3
+citations outside the retrieved sources (fabricated): 0

@@ -1,0 +1,343 @@
+[
+  {
+    "id": "RG-01",
+    "question": "What rate would we indicate to a B2 applicant, what's the longest tenor we'd offer them, and how much collateral?",
+    "category": "factual",
+    "expected_sections": [
+      "risk-grading#4.1"
+    ],
+    "answer_contains": [
+      "13.00",
+      "60",
+      "75"
+    ],
+    "source_id": "WEALTHPILOT-EV-910"
+  },
+  {
+    "id": "RG-02",
+    "question": "What is the minimum operating history required for an SME applicant business before it can be considered for a loan?",
+    "category": "factual",
+    "expected_sections": [
+      "credit-policy-core#4.02"
+    ],
+    "answer_contains": [
+      "24"
+    ],
+    "source_id": "WEALTHPILOT-EV-011"
+  },
+  {
+    "id": "RG-03",
+    "question": "What is Ashva Capital's established lending base rate?",
+    "category": "factual",
+    "expected_sections": [
+      "credit-policy-core#4.09"
+    ],
+    "answer_contains": [
+      "9.5"
+    ],
+    "source_id": "WEALTHPILOT-EV-012"
+  },
+  {
+    "id": "RG-04",
+    "question": "What is the minimum allowable Debt-Service Coverage Ratio (DSCR) set forth in the core underwriting standards?",
+    "category": "factual",
+    "expected_sections": [
+      "credit-policy-core#4.04"
+    ],
+    "answer_contains": [
+      "1.25"
+    ],
+    "source_id": "WEALTHPILOT-EV-013"
+  },
+  {
+    "id": "RG-05",
+    "question": "What is the maximum portfolio exposure cap for the logistics sector?",
+    "category": "factual",
+    "expected_sections": [
+      "sector-logistics#4.12.2"
+    ],
+    "answer_contains": [
+      "10"
+    ],
+    "source_id": "WEALTHPILOT-EV-014"
+  },
+  {
+    "id": "RG-06",
+    "question": "What are the working capital cycle benchmarks for the Light Engineering and Food Processing SME sectors respectively?",
+    "category": "multi_hop",
+    "expected_sections": [
+      "sector-light-engineering#14.2",
+      "sector-food-processing#14.2"
+    ],
+    "answer_contains": [
+      "75",
+      "45"
+    ],
+    "source_id": "WEALTHPILOT-EV-015"
+  },
+  {
+    "id": "RG-07",
+    "question": "If an applicant operates in the textile sector, what is the specific DSCR floor and maximum loan tenor permitted?",
+    "category": "multi_hop",
+    "expected_sections": [
+      "sector-textiles#14.4.3",
+      "sector-textiles#14.4.7"
+    ],
+    "answer_contains": [
+      "1.30",
+      "60"
+    ],
+    "source_id": "WEALTHPILOT-EV-016"
+  },
+  {
+    "id": "RG-08",
+    "question": "What is the required collateral cover percentage and maximum permissible tenor for an application assigned to internal risk grade B1?",
+    "category": "multi_hop",
+    "expected_sections": [
+      "risk-grading#4.1"
+    ],
+    "answer_contains": [
+      "50",
+      "60"
+    ],
+    "source_id": "WEALTHPILOT-EV-017"
+  },
+  {
+    "id": "RG-09",
+    "question": "What revenue variance percentage between declared and verified revenue triggers a Fraud Hold and routes the file to the Special Investigation Unit?",
+    "category": "factual",
+    "expected_sections": [
+      "doc-verification#4.4"
+    ],
+    "answer_contains": [
+      "25"
+    ],
+    "source_id": "WEALTHPILOT-EV-018"
+  },
+  {
+    "id": "RG-10",
+    "question": "What is the exact formula and threshold for the Four-Fifths Rule used in disparate-impact testing?",
+    "category": "factual",
+    "expected_sections": [
+      "fair-lending#4.4"
+    ],
+    "answer_contains": [
+      "80"
+    ],
+    "source_id": "WEALTHPILOT-EV-019"
+  },
+  {
+    "id": "RG-11",
+    "question": "Which applicant attributes count as prohibited proxy variables in credit decisions?",
+    "category": "factual",
+    "expected_sections": [
+      "fair-lending#4.3"
+    ],
+    "answer_contains": [
+      "postal"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-12",
+    "question": "Within how many business hours must an underwriter issue an information request when a file is incomplete?",
+    "category": "factual",
+    "expected_sections": [
+      "adverse-action#14.2"
+    ],
+    "answer_contains": [
+      "24"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-13",
+    "question": "Which revenue variance range results in the DOC_MISMATCH reason code?",
+    "category": "keyword",
+    "expected_sections": [
+      "doc-verification#4.4"
+    ],
+    "answer_contains": [
+      "10"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-14",
+    "question": "What's our policy on lending against cryptocurrency holdings as collateral?",
+    "category": "unanswerable",
+    "expected_sections": [],
+    "answer_contains": [],
+    "source_id": "WEALTHPILOT-EV-905"
+  },
+  {
+    "id": "RG-15",
+    "question": "What is Ashva Capital's internal credit policy for environmental sustainability disclosures when lending to SMEs?",
+    "category": "unanswerable",
+    "expected_sections": [],
+    "answer_contains": [],
+    "source_id": "WEALTHPILOT-EV-020"
+  },
+  {
+    "id": "RG-16",
+    "question": "What does section 14.4.7 of the textiles note cover?",
+    "category": "keyword",
+    "expected_sections": [
+      "sector-textiles#14.4.7"
+    ],
+    "answer_contains": [
+      "exposure"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-17",
+    "question": "What does the reason code FRAUD_HOLD mean?",
+    "category": "keyword",
+    "expected_sections": [
+      "adverse-action#14.4",
+      "doc-verification#4.4"
+    ],
+    "answer_contains": [
+      "25"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-18",
+    "question": "How long can a food processing term loan run?",
+    "category": "sector_lookup",
+    "expected_sections": [
+      "sector-food-processing#14.8"
+    ],
+    "answer_contains": [
+      "60"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-19",
+    "question": "What collateral must a light engineering borrower pledge?",
+    "category": "sector_lookup",
+    "expected_sections": [
+      "sector-light-engineering#14.6"
+    ],
+    "answer_contains": [],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-20",
+    "question": "Which months are the seasonal peak for textile businesses?",
+    "category": "sector_lookup",
+    "expected_sections": [
+      "sector-textiles#14.4.4"
+    ],
+    "answer_contains": [
+      "august"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-21",
+    "question": "How many times EBITDA may total debt including the new loan reach?",
+    "category": "paraphrase",
+    "expected_sections": [
+      "credit-policy-core#4.05"
+    ],
+    "answer_contains": [
+      "6.0"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-22",
+    "question": "What current ratio must an applicant show?",
+    "category": "paraphrase",
+    "expected_sections": [
+      "credit-policy-core#4.05"
+    ],
+    "answer_contains": [
+      "1.10"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-23",
+    "question": "Who has to sign off a facility above 5,000,000 rupees?",
+    "category": "paraphrase",
+    "expected_sections": [
+      "credit-policy-core#4.10"
+    ],
+    "answer_contains": [
+      "board"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-24",
+    "question": "What DSCR floor applies to logistics borrowers?",
+    "category": "sector_lookup",
+    "expected_sections": [
+      "sector-logistics#4.12.4"
+    ],
+    "answer_contains": [
+      "1.4"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-25",
+    "question": "What DSCR floor applies to auto components borrowers?",
+    "category": "sector_lookup",
+    "expected_sections": [
+      "sector-auto-components#14.3"
+    ],
+    "answer_contains": [
+      "1.35"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-26",
+    "question": "At what written-off amount does a bureau record count as a past delinquency?",
+    "category": "paraphrase",
+    "expected_sections": [
+      "credit-policy-core#4.06"
+    ],
+    "answer_contains": [
+      "500"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-27",
+    "question": "What minimum bureau score is needed for grade A1?",
+    "category": "paraphrase",
+    "expected_sections": [
+      "credit-policy-core#4.03"
+    ],
+    "answer_contains": [
+      "750"
+    ],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-28",
+    "question": "What is the biggest loan the system may approve without a human?",
+    "category": "paraphrase",
+    "expected_sections": [
+      "risk-grading#4.4",
+      "risk-grading#4.2"
+    ],
+    "answer_contains": [],
+    "source_id": "own"
+  },
+  {
+    "id": "RG-29",
+    "question": "What interest rate does Ashva Capital pay on fixed deposits?",
+    "category": "unanswerable",
+    "expected_sections": [],
+    "answer_contains": [],
+    "source_id": "own"
+  }
+]

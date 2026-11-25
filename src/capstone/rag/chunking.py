@@ -72,3 +72,29 @@ def chunk_policy(
           text=f"{title} | {number} {heading}\n{part}",
       ))
   return chunks
+
+
+def chunk_pdf_pages(source: str, title: str, section_type: str, pages: list[str], max_chars: Optional[int] = None) -> list[Chunk]:
+  """Fallback for PDFs, whose headings are not reliably recoverable: one chunk per page (split if long).
+
+  section_number is the page ("p2"), so a citation still points at an exact place.
+  """
+  limit = max_chars if max_chars is not None else get_settings().chunk_max_chars
+  chunks: list[Chunk] = []
+  for page_number, page_text in enumerate(pages, start=1):
+    body = page_text.strip()
+    if len(body) < 40:
+      continue
+    for part_index, part in enumerate(_split_long(body, limit), start=1):
+      chunk_id = f"{source}#p{page_number}" + (f".p{part_index}" if part_index > 1 else "")
+      chunks.append(Chunk(
+          chunk_id=chunk_id,
+          source=source,
+          title=title,
+          section_type=section_type,
+          section_number=f"p{page_number}",
+          heading=f"Page {page_number}",
+          text=f"{title} | page {page_number}\n{part}",
+      ))
+  return chunks
+

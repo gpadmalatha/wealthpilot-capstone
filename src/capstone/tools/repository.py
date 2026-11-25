@@ -7,6 +7,7 @@ import csv
 from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
+from typing import Optional
 
 from capstone.settings import get_settings
 
@@ -71,3 +72,27 @@ def reference_rate(name: str) -> float:
     if row["rate"] == name:
       return float(row["value"])
   raise ValueError(f"unknown reference rate '{name}'")
+
+
+@lru_cache
+def grade_table() -> list[dict]:
+  """Risk grades best to worst (A1..D2), from risk_grades."""
+  return read_table("risk_grades")
+
+
+@lru_cache
+def sector_table() -> dict[str, dict]:
+  """Sector policies keyed by sector name."""
+  return {row["sector"]: row for row in read_table("sector_policies")}
+
+
+AUTHORITY_ORDER = ("Credit Officer", "Credit Committee", "Board Credit Committee")
+
+
+def signatory(user_id: str) -> Optional[dict]:
+  """One row of signatories, or None."""
+  for row in read_table("signatories"):
+    if row["user_id"] == user_id:
+      return row
+  return None
+
