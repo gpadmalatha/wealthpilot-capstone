@@ -1,58 +1,58 @@
 PROCESS 1: starting 7 applications
 - ASH-L-00057 [operating 6 months: automatic decline (policy 4.02.3)]
-  ASH-L-00057: done  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->auto_decline', 'auto_decline']
+  ASH-L-00057: done  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->auto_decline', 'auto_decline', 'remember_outcome']
       outcome=declined decided_by=system
 - ASH-L-00000 [declined on bureau grounds: needs human sign-off (policy 4.08.2)]
-  ASH-L-00000: waiting  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review']
+  ASH-L-00000: waiting  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review']
       waiting for a decline_signoff review, allowed=['declined'], error=None
 - ASH-L-00005 [clean, small]
-  ASH-L-00005: done  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->auto_approve', 'auto_approve']
+  ASH-L-00005: done  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->auto_approve', 'auto_approve', 'remember_outcome']
       outcome=approved decided_by=system
 - ASH-L-00006 [borderline]
-  ASH-L-00006: waiting  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review']
+  ASH-L-00006: waiting  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review']
       waiting for a borderline review, allowed=['approved', 'declined'], error=None
 - ASH-L-00017 [revenue mismatch over 25 percent (fraud hold)]
-  ASH-L-00017: waiting  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review']
+  ASH-L-00017: waiting  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review']
       waiting for a fraud_hold review, allowed=['referred_to_siu', 'declined'], error=None
 - ASH-L-00046 [approvable, 1.8 million]
-  ASH-L-00046: waiting  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review']
+  ASH-L-00046: waiting  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review']
       waiting for a signoff review, allowed=['approved', 'declined'], error=None
 - ASH-L-00029 [approvable, 8.5 million]
-  ASH-L-00029: waiting  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review']
+  ASH-L-00029: waiting  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review']
       waiting for a signoff review, allowed=['approved', 'declined'], error=None
 
 PROCESS 2: a brand new Python process, same checkpoint database
 - ASH-L-00000: still waiting on disk = True
     human answers: approved by ASH-U-001
-  ASH-L-00000: waiting  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected']
+  ASH-L-00000: waiting  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected']
       waiting for a decline_signoff review, allowed=['declined'], error=This application cannot be approved: it is policy-declined or under a fraud hold.
     human answers: declined by ASH-U-001
-  ASH-L-00000: done  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected', 'human_review', 'apply_human_decision:ok']
+  ASH-L-00000: done  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected', 'human_review', 'apply_human_decision:ok', 'remember_outcome']
       outcome=declined decided_by=ASH-U-001
 - ASH-L-00006: still waiting on disk = True
     human answers: declined by ASH-U-001
-  ASH-L-00006: done  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:ok']
+  ASH-L-00006: done  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:ok', 'remember_outcome']
       outcome=declined decided_by=ASH-U-001
 - ASH-L-00017: still waiting on disk = True
     human answers: approved by ASH-U-001
-  ASH-L-00017: waiting  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected']
+  ASH-L-00017: waiting  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected']
       waiting for a fraud_hold review, allowed=['referred_to_siu', 'declined'], error=This application cannot be approved: it is policy-declined or under a fraud hold.
     human answers: referred_to_siu by ASH-U-001
-  ASH-L-00017: done  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected', 'human_review', 'apply_human_decision:ok']
+  ASH-L-00017: done  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected', 'human_review', 'apply_human_decision:ok', 'remember_outcome']
       outcome=referred_to_siu decided_by=ASH-U-001
 - ASH-L-00046: still waiting on disk = True
     human answers: approved by ASH-U-001
-  ASH-L-00046: waiting  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected']
+  ASH-L-00046: waiting  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected']
       waiting for a signoff review, allowed=['approved', 'declined'], error=A Credit Officer cannot sign a loan of 1800000 rupees; it needs Credit Committee.
     human answers: approved by ASH-U-013
-  ASH-L-00046: done  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected', 'human_review', 'apply_human_decision:ok']
+  ASH-L-00046: done  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected', 'human_review', 'apply_human_decision:ok', 'remember_outcome']
       outcome=approved decided_by=ASH-U-013
 - ASH-L-00029: still waiting on disk = True
     human answers: approved by ASH-U-013
-  ASH-L-00029: waiting  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected']
+  ASH-L-00029: waiting  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected']
       waiting for a signoff review, allowed=['approved', 'declined'], error=A Credit Committee cannot sign a loan of 8500000 rupees; it needs Board Credit Committee.
     human answers: approved by ASH-U-019
-  ASH-L-00029: done  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected', 'human_review', 'apply_human_decision:ok']
+  ASH-L-00029: done  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'human_review', 'apply_human_decision:rejected', 'human_review', 'apply_human_decision:ok', 'remember_outcome']
       outcome=approved decided_by=ASH-U-019
 
 Duplicate resume of ASH-L-00006 (must not record a second decision):

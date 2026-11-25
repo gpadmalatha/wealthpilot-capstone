@@ -39,6 +39,22 @@ and the policy engine (`assess_loan_application`, `verify_loan_application`) acc
 out-of-range values are rejected by the schema, so facts that never passed intake cannot reach a decision. The `get_application`
 tool returns the same object to the agent. Names, city and language are never part of it.
 
+## Tools and memory in the workflow
+The graph is `intake -> recall_memory -> pull_bureau -> verify_documents -> score_risk -> route -> ... -> remember_outcome`.
+
+- **Tools.** Nodes never import business functions directly. They call tools by name through `workflows/tools.py`, which
+  serves the agent's registered tools (`get_application`, `get_bank_statements`, `check_approval_authority`,
+  `hand_off_to_human`) plus the three that take the validated application or write the decision
+  (`verify_loan_application`, `assess_loan_application`, `record_decision`). Each call returns the same `ToolResult`
+  as in the agent loop, and an audit entry; the entries accumulate in the state (`tool_calls`) and in the trace.
+- **Memory (M3).** `recall_memory` reads this applicant's facts, procedures and recent events (namespaced by the
+  applicant id of the validated application, never chosen by a model). `remember_outcome` writes an event and the last
+  outcome after every finished run, and a `fraud_referral` fact after a referral to the SIU. The reviewer's request shows
+  the remembered context and the authority needed for the loan size.
+- **Rule for memory.** It can only add caution. A standing procedure (`always_human_review`, saved by an analyst) or an
+  earlier fraud referral sends the case to a human even when the policy engine would have decided it automatically.
+  Memory can never approve, decline or relax a policy check. A memory failure is logged and never blocks a decision.
+
 ## Where each rule lives
 | Rule | Enforced by |
 |---|---|

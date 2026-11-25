@@ -173,8 +173,11 @@ def assess_application(application_id: str, bureau: Optional[dict] = None) -> di
   return assess_loan_application(application, bureau)
 
 
-def verify_loan_application(application: Union[LoanApplication, dict]) -> dict:
-  """Check the declared revenue of a validated LoanApplication against verified revenue and count bank statements."""
+def verify_loan_application(application: Union[LoanApplication, dict], statements: Optional[dict] = None) -> dict:
+  """Check the declared revenue of a validated LoanApplication against verified revenue and count bank statements.
+
+  Pass the result of the get_bank_statements tool as statements, or leave it out to fetch them here.
+  """
   application = _as_application(application)
   declared = int(application.declared_financials.annual_revenue_inr)
   verified = _verified_revenue(application.applicant_id)
@@ -185,7 +188,7 @@ def verify_loan_application(application: Union[LoanApplication, dict]) -> dict:
     flag = "doc_mismatch"
   else:
     flag = "ok"
-  statements = get_bank_statements(application.applicant_id, months=6)
+  statements = statements or get_bank_statements(application.applicant_id, months=6)
   return {
       "application_id": application.application_id,
       "declared_revenue_inr": declared,

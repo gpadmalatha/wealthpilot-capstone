@@ -1,0 +1,21 @@
+1. A routine application (ASH-L-00005, applicant ASH-A-00005) with nothing remembered yet
+   trail: ['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->auto_approve', 'auto_approve', 'remember_outcome']
+   tools: get_application, get_bureau_report, get_bank_statements, verify_loan_application, assess_loan_application, check_approval_authority, record_decision
+   outcome=approved decided_by=system
+
+2. What was remembered, read back by a NEW store on the same database file (as after a restart)
+   event: Application ASH-L-00005: outcome=approved; decided_by=system; grade=B1; reasons=APPROVED_STANDARD; bureau=live; route=auto_approve
+   fact:  last_outcome = approved (ASH-L-00005)
+
+3. An analyst saves a standing procedure for applicant ASH-A-00022; their routine application ASH-L-00022 would normally be approved automatically
+   trail: ['intake', 'recall_memory(1)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review']
+   status=waiting review kind=signoff required authority=Credit Officer
+   memory hold shown to the reviewer: standing procedure 'always_human_review': Analyst asked for manual review of this applicant.
+   decided automatically? no
+   after the reviewer answers: outcome=approved decided_by=ASH-U-001
+
+4. Memory is per applicant
+   events stored for ASH-A-00005: 1; for ASH-A-00022: 1
+   each applicant's memory holds only that applicant's own record
+
+Rule: memory can only send a case to a human. It never approves, declines or relaxes a policy check.
