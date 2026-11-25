@@ -1,0 +1,39 @@
+SCENARIO A: bureau times out twice, then answers (bounded retries with backoff). Whole request traced.
+  status=done outcome=approved bureau_source=live
+  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->auto_approve', 'auto_approve']
+  primary bureau was called 3 times for one request
+  trace tree (one trace id for the entire request):
+  underwrite_start [request] ok 2043.37ms 
+    node:intake [node] ok 7.58ms 
+      tool:get_application [tool] ok 7.54ms {'ok': True, 'error_code': None}
+    node:pull_bureau [node] ok 1995.84ms 
+      bureau:bureau_primary [dependency] ok 1995.77ms {'applicant_id': 'ASH-A-00005', 'result': 'ok'}
+    node:verify_documents [node] ok 1.7ms 
+      tool:verify_documents [tool] ok 1.65ms {'ok': True, 'error_code': None}
+    node:score_risk [node] ok 5.09ms 
+      tool:assess_application [tool] ok 5.03ms {'ok': True, 'error_code': None}
+    node:auto_approve [node] ok 4.04ms 
+      tool:record_decision [tool] ok 4.01ms {'ok': True, 'error_code': None}
+  trace_ids in this request: 1
+
+SCENARIO B: primary bureau is down, the backup source (the MCP bureau server) answers.
+  status=done outcome=approved bureau_source=live
+  trail=['intake', 'pull_bureau:live(bureau_backup_mcp)', 'verify_documents', 'score_risk->auto_approve', 'auto_approve']
+
+SCENARIO C: every live source is down but a recent report is cached: a clean small loan is NOT auto-approved.
+  status=waiting outcome=None bureau_source=cache
+  paused for human review kind=bureau_stale
+  trail=['intake', 'pull_bureau:cache(cache)', 'verify_documents', 'score_risk->human_review']
+
+SCENARIO D: every source is down and nothing is cached: no decision, the file is queued for a human.
+  status=done outcome=queued_bureau_unavailable bureau_source=unavailable
+  trail=['intake', 'pull_bureau:unavailable(none)']
+  hand-off records written: 1; decisions written: none
+
+SCENARIO E: circuit breaker. Threshold 2 failed fetches, cool-down 2 seconds.
+  fetch 1: status=unavailable breaker=closed calls_to_bureau=3 note=bureau_primary: failed after retries (SourceUnavailableError)
+  fetch 2: status=unavailable breaker=open calls_to_bureau=3 note=bureau_primary: failed after retries (SourceUnavailableError)
+  fetch 3: status=unavailable breaker=open calls_to_bureau=0 note=bureau_primary: circuit open, skipped
+  waiting 2.1 seconds for the cool-down, and the bureau recovers ...
+  breaker after cool-down: half_open
+  fetch 4 (one trial call): status=live breaker=closed

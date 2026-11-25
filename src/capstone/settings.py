@@ -21,6 +21,13 @@ class Settings(BaseSettings):
   max_agent_steps: int = 8  # hard cap on model calls per agent run
   max_approval_attempts: int = 3  # rejected human decisions before a case is escalated as unresolved
   max_committee_rounds: int = 3  # analyst/reviewer revision rounds before the committee gives up
+  tracing_enabled: bool = True
+  retry_max_attempts: int = 3  # tries per dependency call (first try included)
+  retry_base_delay_seconds: float = 0.5
+  retry_max_delay_seconds: float = 4.0
+  breaker_failure_threshold: int = 3  # failed calls (after retries) before a circuit opens
+  breaker_reset_seconds: float = 30.0  # cool-down before one trial call is allowed
+  bureau_cache_max_age_hours: float = 72.0  # a cached bureau report older than this is not used
   working_memory_budget_tokens: int = 3000  # conversation context allowed before old turns are trimmed
   working_memory_min_turns: int = 4  # never trim below this many most-recent messages
   qdrant_collection: str = "policy_docs"

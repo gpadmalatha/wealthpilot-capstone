@@ -14,6 +14,7 @@ from pydantic import BaseModel, ValidationError
 from capstone.agents.underwriting_agent import load_prompt
 from capstone.llm.client import chat
 from capstone.mcp.client import call_tools_sync
+from capstone.observability.tracing import span
 from capstone.schemas.committee import AnalystMemo, CommitteeResult, ReviewVerdict
 from capstone.settings import get_settings
 from capstone.tools.policy_engine import assess_application, verify_documents
@@ -67,7 +68,8 @@ def _ask_json(system_prompt: str, user_payload: dict, model: type[BaseModel], ll
   messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": json.dumps(user_payload, default=str)}]
   last_error = ""
   for _ in range(get_settings().max_repair_attempts):
-    raw = llm(messages)
+    with span(f"committee.{model.__name__}", kind="agent"):
+      raw = llm(messages)
     try:
       return model.model_validate_json(raw)
     except (ValidationError, ValueError) as error:

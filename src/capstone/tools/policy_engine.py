@@ -4,6 +4,8 @@ No model is involved. The workflow, the committee agents and the MCP server all 
 assess_application, so a decision never depends on which entry point asked.
 Inputs are financial and bureau facts only. Name, city, community and language are never read here.
 """
+from typing import Optional
+
 from capstone.tools.assessments import _application_and_applicant
 from capstone.tools.calculators import calculate_dscr
 from capstone.tools.lookups import get_bank_statements, get_bureau_report
@@ -30,7 +32,7 @@ def _revenue_variance_pct(declared: int, verified: int) -> float:
   return abs(declared - verified) / verified * 100 if verified else 0.0
 
 
-def assess_application(application_id: str) -> dict:
+def assess_application(application_id: str, bureau: Optional[dict] = None) -> dict:
   """Apply the credit policy to one application and return grade, ratios, reason codes and status.
 
   Use for the policy verdict on an application. Do not use to approve or decline: it only
@@ -39,7 +41,7 @@ def assess_application(application_id: str) -> dict:
   status, auto_approve_allowed and requires_human_signoff.
   """
   application, applicant = _application_and_applicant(application_id)
-  bureau = get_bureau_report(application["applicant_id"])
+  bureau = bureau or get_bureau_report(application["applicant_id"])  # a report pulled earlier may be passed in
   sector = sector_table()[applicant["sector"]]
 
   amount = int(application["requested_amount_inr"])

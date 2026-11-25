@@ -5,6 +5,7 @@ ALLOWED_OUTCOMES = {
     "fraud_hold": ("referred_to_siu", "declined"),
     "borderline": ("approved", "declined"),
     "signoff": ("approved", "declined"),
+    "bureau_stale": ("approved", "declined"),
 }
 
 
@@ -34,6 +35,7 @@ def review_request(state: dict) -> dict:
       "grade": assessment["grade"],
       "dscr": assessment["dscr"],
       "reason_codes": assessment["reason_codes"],
+      "bureau_source": state.get("bureau_source"),
       "allowed_outcomes": [o for o in ALLOWED_OUTCOMES[kind] if o in DECISION_OUTCOMES],
       "committee": _committee_summary(state.get("committee")),
       "error": state.get("review_error"),

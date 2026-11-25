@@ -4,16 +4,19 @@ Clear policy declines and small clean approvals are decided automatically. Fraud
 approvals that need a signatory pause at a human checkpoint. The pause is persisted, so the run can be resumed
 later, even from a new process. Side effects live in their own nodes AFTER the pause, so a resume never repeats one.
 """
+import functools
 import logging
 from typing import Any, Callable, Optional
 
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
 
+from capstone.observability.tracing import span, start_trace
+from capstone.reliability.fallbacks import CACHE, LIVE, UNAVAILABLE, ResilientBureau, default_bureau
 from capstone.schemas.response import run_tool
 from capstone.schemas.state import WorkflowState
 from capstone.settings import get_settings
-from capstone.tools.actions import SYSTEM_ACTOR, record_decision
+from capstone.tools.actions import SYSTEM_ACTOR, hand_off_to_human, record_decision
 from capstone.tools.assessments import get_application
 from capstone.tools.policy_engine import assess_application, verify_documents
 from capstone.workflows.approvals import review_kind, review_request
@@ -28,18 +31,44 @@ def intake(state: WorkflowState) -> dict:
   return {"application": result.data, "trail": ["intake"]}
 
 
+def make_bureau_node(bureau: ResilientBureau):
+  """Pull the bureau report through retries, a circuit breaker and fallbacks. Say which source answered."""
+  def pull_bureau(state: WorkflowState) -> dict:
+    applicant_id = state["application"]["applicant_id"]
+    outcome = bureau.fetch(applicant_id)
+    update: dict[str, Any] = {"bureau_source": outcome.status, "bureau_log": outcome.attempts, "trail": [f"pull_bureau:{outcome.status}({outcome.source})"]}
+    if outcome.report:
+      update["bureau_report"] = outcome.report
+    if outcome.status == UNAVAILABLE:
+      # Safe fallback: no bureau data, so no automatic decision. Queue the file for a human instead.
+      handoff = run_tool(hand_off_to_human, application_id=state["application_id"], reason="missing_information",
+                         summary="Credit bureau unavailable; file queued for manual handling. " + "; ".join(outcome.attempts))
+      update.update({"outcome": "queued_bureau_unavailable", "decision": handoff.data or {}})
+    return update
+  return pull_bureau
+
+
+def after_bureau(state: WorkflowState) -> str:
+  return END if state.get("outcome") else "verify_documents"
+
+
 def verify(state: WorkflowState) -> dict:
   result = run_tool(verify_documents, application_id=state["application_id"])
   return {"verification": result.data or {}, "trail": ["verify_documents"]}
 
 
 def score(state: WorkflowState) -> dict:
-  result = run_tool(assess_application, application_id=state["application_id"])
+  arguments = {"application_id": state["application_id"]}
+  if state.get("bureau_report"):
+    arguments["bureau"] = state["bureau_report"]
+  result = run_tool(assess_application, **arguments)
   if not result.ok:
     return {"outcome": "unresolved", "review_error": result.error.message, "trail": ["score_risk:failed"]}
   assessment = result.data
   if "FRAUD_HOLD" in assessment["reason_codes"]:
     route = "human_review"  # fraud is never decided automatically, even if the file is also a clear decline
+  elif state.get("bureau_source") == CACHE:
+    route = "human_review"  # decisions on a stale bureau report are never automatic
   elif assessment["status"] == "declined":
     route = "auto_decline"
   elif assessment["auto_approve_allowed"]:
@@ -49,6 +78,8 @@ def score(state: WorkflowState) -> dict:
   update: dict[str, Any] = {"assessment": assessment, "route": route, "trail": [f"score_risk->{route}"]}
   if route == "human_review":
     update["review_kind"] = review_kind(assessment)
+    if state.get("bureau_source") == CACHE and update["review_kind"] != "fraud_hold":
+      update["review_kind"] = "bureau_stale"
   return update
 
 
@@ -113,25 +144,40 @@ def give_up(state: WorkflowState) -> dict:
 
 
 def after_intake(state: WorkflowState) -> str:
-  return END if state.get("outcome") else "verify_documents"
+  return END if state.get("outcome") else "pull_bureau"
 
 
-def build_graph(checkpointer: Any, committee: Optional[Callable[[str], Any]] = None):
+def _traced_node(name: str, function: Callable) -> Callable:
+  """Run a node inside a span named after it."""
+  @functools.wraps(function)
+  def wrapper(state: WorkflowState) -> dict:
+    with span(f"node:{name}", kind="node"):
+      return function(state)
+  return wrapper
+
+
+def build_graph(checkpointer: Any, committee: Optional[Callable[[str], Any]] = None, bureau: Optional[ResilientBureau] = None):
   builder = StateGraph(WorkflowState)
-  builder.add_node("intake", intake)
-  builder.add_node("verify_documents", verify)
-  builder.add_node("score_risk", score)
-  builder.add_node("auto_decline", auto_decline)
-  builder.add_node("auto_approve", auto_approve)
-  builder.add_node("human_review", human_review)
+  nodes = {
+      "intake": intake,
+      "pull_bureau": make_bureau_node(bureau or default_bureau()),
+      "verify_documents": verify,
+      "score_risk": score,
+      "auto_decline": auto_decline,
+      "auto_approve": auto_approve,
+      "human_review": human_review,
+      "apply_human_decision": apply_human_decision,
+      "give_up": give_up,
+  }
   if committee is not None:
-    builder.add_node("committee_review", make_committee_node(committee))
+    nodes["committee_review"] = make_committee_node(committee)
     builder.add_edge("committee_review", "human_review")
-  builder.add_node("apply_human_decision", apply_human_decision)
-  builder.add_node("give_up", give_up)
+  for name, function in nodes.items():
+    builder.add_node(name, _traced_node(name, function))
 
   builder.add_edge(START, "intake")
-  builder.add_conditional_edges("intake", after_intake, {"verify_documents": "verify_documents", END: END})
+  builder.add_conditional_edges("intake", after_intake, {"pull_bureau": "pull_bureau", END: END})
+  builder.add_conditional_edges("pull_bureau", after_bureau, {"verify_documents": "verify_documents", END: END})
   builder.add_edge("verify_documents", "score_risk")
   builder.add_conditional_edges("score_risk", after_scoring, {"auto_decline": "auto_decline", "auto_approve": "auto_approve", "human_review": "committee_review" if committee is not None else "human_review", END: END})
   builder.add_edge("auto_decline", END)
@@ -148,12 +194,14 @@ def _config(application_id: str) -> dict:
 
 def start(graph: Any, application_id: str) -> dict:
   """Run an application until it finishes or pauses for a human. Returns {'status': 'done'|'waiting', ...}."""
-  return _summarise(graph, graph.invoke({"application_id": application_id}, _config(application_id)), application_id)
+  with start_trace("underwrite_start", application_id=application_id):
+    return _summarise(graph, graph.invoke({"application_id": application_id}, _config(application_id)), application_id)
 
 
 def resume(graph: Any, application_id: str, human_input: dict) -> dict:
   """Continue a paused application with the reviewer's answer."""
-  return _summarise(graph, graph.invoke(Command(resume=human_input), _config(application_id)), application_id)
+  with start_trace("underwrite_resume", application_id=application_id):
+    return _summarise(graph, graph.invoke(Command(resume=human_input), _config(application_id)), application_id)
 
 
 def is_waiting(graph: Any, application_id: str) -> bool:
@@ -164,4 +212,5 @@ def _summarise(graph: Any, result: dict, application_id: str) -> dict:
   pending = result.get("__interrupt__")
   if pending:
     return {"status": "waiting", "request": pending[0].value, "trail": result.get("trail", [])}
-  return {"status": "done", "outcome": result.get("outcome"), "decision": result.get("decision"), "trail": result.get("trail", [])}
+  return {"status": "done", "outcome": result.get("outcome"), "decision": result.get("decision"), "trail": result.get("trail", []),
+          "bureau_source": result.get("bureau_source")}

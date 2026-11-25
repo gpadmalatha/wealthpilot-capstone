@@ -1,5 +1,7 @@
 import logging
 
+from capstone.observability.tracing import annotate, span
+
 from capstone.tools.calculators import CalculationInputError
 from capstone.tools.lookups import ApplicantNotFoundError
 
@@ -25,7 +27,7 @@ class ToolResult(BaseModel):
   error: Optional[ToolError] = None
 
 
-def run_tool(tool_function, **arguments) -> ToolResult:
+def _run_tool_untraced(tool_function, **arguments) -> ToolResult:
     """Run a tool and never let an exception escape: failures become ToolResult(ok=False)."""
     try:
         return ToolResult(ok=True, data=tool_function(**arguments))
@@ -39,3 +41,11 @@ def run_tool(tool_function, **arguments) -> ToolResult:
         logger.exception("tool %s failed unexpectedly", getattr(tool_function, "__name__", repr(tool_function)))
         # 3. Return an internal error result with a SAFE message
         return ToolResult(ok=False, error=ToolError(code="internal", message="The tool failed unexpectedly."))
+
+
+def run_tool(tool_function, **arguments) -> ToolResult:
+  """Run a tool inside a trace span. Failures stay structured; the span records ok or the error code."""
+  with span(f"tool:{getattr(tool_function, '__name__', 'tool')}", kind="tool"):
+    result = _run_tool_untraced(tool_function, **arguments)
+    annotate(ok=result.ok, error_code=result.error.code if result.error else None)
+    return result

@@ -5,9 +5,16 @@ import warnings
 import litellm
 from litellm import completion
 
+from capstone.observability.tracing import annotate, traced
 from capstone.settings import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+def _record_usage(response) -> None:
+  """Put model name and token counts on the open trace span."""
+  usage = getattr(response, "usage", None)
+  annotate(model=get_settings().llm_model, prompt_tokens=getattr(usage, "prompt_tokens", None), completion_tokens=getattr(usage, "completion_tokens", None))
 
 litellm.suppress_debug_info = True  # no advert banners in logs
 # LiteLLM message objects trigger a harmless Pydantic serializer warning on every tool turn
@@ -18,6 +25,7 @@ class LLMTruncatedError(Exception):
   """The model's reply was cut off by the token limit."""
 
 
+@traced("llm.chat", kind="llm")
 def chat(messages: list[dict], *, json_mode: bool = False) -> str:
   settings = get_settings()
 
@@ -34,6 +42,7 @@ def chat(messages: list[dict], *, json_mode: bool = False) -> str:
       **kwargs,
   )
 
+  _record_usage(response)
   choice = response.choices[0]
   if choice.finish_reason == "length":
     raise LLMTruncatedError(
@@ -42,6 +51,7 @@ def chat(messages: list[dict], *, json_mode: bool = False) -> str:
   return choice.message.content
 
 
+@traced("llm.chat_with_tools", kind="llm")
 def chat_with_tools(messages: list[dict], tools: list[dict]):
   """One model turn with tools available. Returns the assistant message (text and/or tool_calls)."""
   settings = get_settings()
@@ -53,12 +63,14 @@ def chat_with_tools(messages: list[dict], tools: list[dict]):
       timeout=settings.llm_timeout_seconds,
       num_retries=settings.llm_max_retries,
   )
+  _record_usage(response)
   choice = response.choices[0]
   if choice.finish_reason == "length":
     raise LLMTruncatedError("Reply was cut off; raise the token limit.")
   return choice.message
 
 
+@traced("llm.embed", kind="llm")
 def embed(texts: list[str]) -> list[list[float]]:
   """Embed texts with the configured embedding model (provider-agnostic, via LiteLLM)."""
   settings = get_settings()
