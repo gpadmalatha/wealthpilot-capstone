@@ -1,0 +1,28 @@
+MCP server tools (listed over stdio):
+  - check_bureau_policy
+  - get_bank_statements
+  - get_bureau_report
+
+get_bureau_report(ASH-A-00006) via MCP: ok=True score=785
+get_bureau_report(NOPE) via MCP: ok=False error=not_found
+
+=== ASH-L-00006 [borderline (thin file, sector cap)]
+outcome=agreed final_recommendation=refer rounds=1
+  round 1: analyst says refer: The policy status is borderline and requires human signoff with auto approval not allowed, driven by reason codes THIN_FILE and SECTOR_CAP. However, the applica
+    policy_guard: accept (-)
+    risk_reviewer: accept (-)
+    compliance_reviewer: accept (-)
+
+=== ASH-L-00017 [revenue mismatch over 25 percent (fraud hold)]
+outcome=agreed final_recommendation=decline rounds=1
+  round 1: analyst says decline: The application cannot be approved because the policy engine status is borderline with a FRAUD_HOLD and DOC_MISMATCH reason codes. Specifically, verified revenu
+    policy_guard: accept (-)
+    risk_reviewer: accept (-)
+    compliance_reviewer: accept (-)
+
+=== ASH-L-00046 [approvable, needs Credit Committee sign-off]
+outcome=agreed final_recommendation=refer rounds=1
+  round 1: analyst says refer: The policy engine status is approvable with reason code APPROVED_STANDARD, but auto-approve is not allowed and human signoff is required. Financial metrics are 
+    policy_guard: accept (-)
+    risk_reviewer: accept (-)
+    compliance_reviewer: accept (-)
