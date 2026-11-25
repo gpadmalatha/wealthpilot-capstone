@@ -32,6 +32,11 @@ pip install -e ".[dev]"
 copy .env.example .env
 ```
 
+The synthetic toolkit data is not in the repository (it is git-ignored). Generate it
+with the course Data Toolkit (`python generate.py --domain wealthpilot`, toolkit 1.0.4,
+seed 42) and copy the output to `data/wealthpilot/`; see `docs/data_sources.md`.
+The tests stop with a clear message if it is missing.
+
 Put your own model API key in `.env` (never commit it). Then:
 
 ```
