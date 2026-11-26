@@ -12,6 +12,7 @@ class WorkflowState(TypedDict, total=False):
   bureau_report: dict
   bureau_source: str  # live | cache | unavailable
   bureau_log: list[str]
+  used_fallback: bool  # the bureau answer came from a backup source or the cache
   verification: dict
   assessment: dict
   route: str  # auto_decline | auto_approve | human_review

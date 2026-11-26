@@ -4,6 +4,7 @@ import random
 import time
 from typing import Callable, Optional, TypeVar
 
+from capstone.observability.tracing import annotate
 from capstone.settings import get_settings
 
 logger = logging.getLogger(__name__)
@@ -28,9 +29,12 @@ def call_with_retries(
   attempts = max_attempts or settings.retry_max_attempts
   for attempt in range(1, attempts + 1):
     try:
-      return function()
+      result = function()
+      annotate(retries=attempt - 1)  # on the open trace span: how many retries this call needed
+      return result
     except retryable as error:
       if attempt == attempts:
+        annotate(retries=attempt - 1)
         logger.warning("%s failed after %d attempts: %s", label, attempts, error)
         raise
       delay = min(settings.retry_base_delay_seconds * (2 ** (attempt - 1)), settings.retry_max_delay_seconds)

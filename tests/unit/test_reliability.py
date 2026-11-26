@@ -233,3 +233,22 @@ def test_a_broken_sink_never_breaks_the_request(env):
     raise OSError("disk full")
   tracing.set_sink(broken)
   assert wf.start(_graph(env, BureauSource("primary", Flaky(0))), AUTO_DECLINE)["outcome"] == "declined"
+
+def test_fallback_is_flagged_and_tagged_on_spans(tmp_path):
+  events = []
+  tracing.set_sink(events.append)
+  chain = _chain(BureauSource("primary", Flaky(failures=99)), BureauSource("backup", Flaky(failures=0)), tmp_path=tmp_path)
+  with tracing.start_trace("t"):
+    outcome = chain.fetch("ASH-A-00005")
+  assert outcome.status == LIVE and outcome.source == "backup" and outcome.used_fallback is True
+  spans = {e["name"]: e["attrs"] for e in events}
+  assert spans["bureau:primary"]["result"] == "failed"
+  assert spans["bureau:primary"]["retries"] == 2  # three tries, so two retries
+  assert spans["bureau:primary"]["breaker_state"] == CLOSED
+  assert spans["bureau:backup"]["used_fallback"] is True
+
+
+def test_primary_answer_is_not_a_fallback(tmp_path):
+  chain = _chain(BureauSource("primary", Flaky(failures=0)), tmp_path=tmp_path)
+  outcome = chain.fetch("ASH-A-00005")
+  assert outcome.status == LIVE and outcome.used_fallback is False

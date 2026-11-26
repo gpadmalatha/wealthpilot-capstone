@@ -28,6 +28,7 @@ class BureauOutcome:
   report: Optional[dict] = None
   attempts: list[str] = field(default_factory=list)  # human-readable log of what was tried
   cache_age_hours: Optional[float] = None
+  used_fallback: bool = False  # True when the answer came from a backup source or the cache, not the primary source
 
 
 class BureauSource:
@@ -70,7 +71,7 @@ class ResilientBureau:
 
   def fetch(self, applicant_id: str) -> BureauOutcome:
     attempts: list[str] = []
-    for source in self.sources:
+    for position, source in enumerate(self.sources):
       with span(f"bureau:{source.name}", kind="dependency", applicant_id=applicant_id) as attrs:
         try:
           kwargs = {"sleep": self._sleep} if self._sleep else {}
@@ -80,27 +81,28 @@ class ResilientBureau:
           )
         except CircuitOpenError:
           attempts.append(f"{source.name}: circuit open, skipped")
-          attrs["result"] = "circuit_open"
+          attrs.update(result="circuit_open", breaker_state=source.breaker.state)
           continue
         except RETRYABLE as error:
           attempts.append(f"{source.name}: failed after retries ({type(error).__name__})")
-          attrs["result"] = "failed"
+          attrs.update(result="failed", breaker_state=source.breaker.state)
           continue
         except ApplicantNotFoundError:
           attempts.append(f"{source.name}: applicant not found")
-          attrs["result"] = "not_found"
+          attrs.update(result="not_found", breaker_state=source.breaker.state)
           return BureauOutcome(UNAVAILABLE, "none", attempts=attempts)  # a missing record is not an outage; do not fall back
-        attrs["result"] = "ok"
+        used_fallback = position > 0  # an answer from any source after the first is a degraded path
+        attrs.update(result="ok", breaker_state=source.breaker.state, used_fallback=used_fallback)
         attempts.append(f"{source.name}: ok")
         self._remember(applicant_id, report)
-        return BureauOutcome(LIVE, source.name, report, attempts)
+        return BureauOutcome(LIVE, source.name, report, attempts, used_fallback=used_fallback)
 
     report, age = self._cached(applicant_id)
     with span("bureau:cache", kind="dependency", applicant_id=applicant_id) as attrs:
-      attrs["result"] = "hit" if report else "miss"
+      attrs.update(result="hit" if report else "miss", used_fallback=bool(report))
     if report:
       attempts.append(f"cache: last good report, {age} hours old")
-      return BureauOutcome(CACHE, "cache", report, attempts, age)
+      return BureauOutcome(CACHE, "cache", report, attempts, age, used_fallback=True)
     attempts.append("cache: no usable report")
     return BureauOutcome(UNAVAILABLE, "none", None, attempts)
 

@@ -11,6 +11,7 @@ Memory can only send a case to a human; it never approves, declines or relaxes a
 import functools
 import logging
 from typing import Any, Callable, Optional
+from capstone.observability.tracing import annotate, span, start_trace
 
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
@@ -48,6 +49,7 @@ def make_bureau_node(bureau: ResilientBureau):
   def pull_bureau(state: WorkflowState) -> dict:
     application = _application(state)
     outcome = bureau.fetch(application.applicant_id)
+    annotate(bureau_source=outcome.status, used_fallback=outcome.used_fallback)  # tag the node span
     update: dict[str, Any] = {"bureau_source": outcome.status, "bureau_log": outcome.attempts, "trail": [f"pull_bureau:{outcome.status}({outcome.source})"],
                               "tool_calls": [{"tool": "get_bureau_report", "ok": outcome.status != UNAVAILABLE, "error": None if outcome.status != UNAVAILABLE else "unavailable", "source": outcome.source}]}
     if outcome.report:
