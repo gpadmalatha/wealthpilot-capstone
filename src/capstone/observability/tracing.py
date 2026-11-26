@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 _trace_id: ContextVar[Optional[str]] = ContextVar("trace_id", default=None)
 _span_id: ContextVar[Optional[str]] = ContextVar("span_id", default=None)
 _attrs: ContextVar[Optional[dict]] = ContextVar("span_attrs", default=None)
+_session_id: ContextVar[Optional[str]] = ContextVar("session_id", default=None)
+_user_id: ContextVar[Optional[str]] = ContextVar("user_id", default=None)
 
 MAX_ERROR_CHARS = 200
 Sink = Callable[[dict], None]
@@ -46,16 +48,33 @@ def set_sink(sink: Optional[Sink]) -> None:
 def current_trace_id() -> Optional[str]:
   return _trace_id.get()
 
+def current_session_id() -> Optional[str]:
+  return _session_id.get()
+
+
+def current_user_id() -> Optional[str]:
+  return _user_id.get()
+
 
 @contextmanager
-def start_trace(name: str, **attrs: Any) -> Iterator[str]:
-  """Open a trace (or join the active one) and a root span around the request."""
+def start_trace(name: str, *, session_id: Optional[str] = None, user_id: Optional[str] = None, **attrs: Any) -> Iterator[str]:
+  """Open a trace (or join the active one) and a root span around the request.
+
+  session_id groups the requests of one conversation or case; user_id says who asked ('system' for batch jobs).
+  A trace that joins an active one keeps the ids already set unless new ones are passed.
+  """
   existing = _trace_id.get()
   token = None if existing else _trace_id.set(f"{name.replace(' ', '_')}-{uuid.uuid4().hex[:10]}")
+  session_token = _session_id.set(session_id) if session_id else (_session_id.set(_trace_id.get()) if _session_id.get() is None else None)
+  user_token = _user_id.set(user_id) if user_id else (_user_id.set("anonymous") if _user_id.get() is None else None)
   try:
     with span(name, kind="request", **attrs):
       yield _trace_id.get()
   finally:
+    if user_token is not None:
+      _user_id.reset(user_token)
+    if session_token is not None:
+      _session_id.reset(session_token)
     if token is not None:
       _trace_id.reset(token)
 
@@ -73,6 +92,7 @@ def span(name: str, kind: str = "step", **attrs: Any) -> Iterator[dict]:
   attrs_token = _attrs.set(attrs)
   started = time.perf_counter()
   event = {"trace_id": trace_id, "span_id": span_id, "parent_id": parent_id, "name": name, "kind": kind,
+           "session_id": _session_id.get(), "user_id": _user_id.get(),
            "started_at": datetime.now(timezone.utc).isoformat(), "attrs": attrs, "status": "ok"}
   try:
     yield attrs

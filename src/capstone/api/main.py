@@ -37,7 +37,9 @@ def create_app(graph: Optional[Any] = None, assistant_factory: Optional[Callable
 
   @app.middleware("http")
   async def trace_requests(request: Request, call_next):
-    with start_trace("http_request", method=request.method, path=request.url.path) as trace_id:
+    with start_trace("http_request", session_id=request.headers.get("X-Session-Id"),
+                     user_id=request.headers.get("X-User-Id"),
+                     method=request.method, path=request.url.path) as trace_id:
       response = await call_next(request)
       response.headers["X-Trace-Id"] = trace_id
       return response
