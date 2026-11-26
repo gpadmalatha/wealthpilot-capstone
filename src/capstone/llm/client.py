@@ -1,6 +1,7 @@
 import logging
 import time
 import warnings
+from typing import Optional
 
 import litellm
 from litellm import completion
@@ -11,11 +12,26 @@ from capstone.settings import get_settings
 logger = logging.getLogger(__name__)
 
 
-def _record_usage(response) -> None:
-  """Put model name and token counts on the open trace span."""
-  usage = getattr(response, "usage", None)
-  annotate(model=get_settings().llm_model, prompt_tokens=getattr(usage, "prompt_tokens", None), completion_tokens=getattr(usage, "completion_tokens", None))
+def _cost_usd(model: str, prompt_tokens: int, completion_tokens: int) -> Optional[float]:
+  """Price of one call from LiteLLM's price table; None when the model is not in the table."""
+  try:
+    prompt_cost, completion_cost = litellm.cost_per_token(
+        model=model, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
+    return round(prompt_cost + completion_cost, 8)
+  except Exception:  # unknown model: report no cost rather than a wrong one
+    logger.debug("no price known for model %s", model)
+    return None
 
+
+def _record_usage(response, model: Optional[str] = None) -> None:
+  """Put model name, token counts and cost on the open trace span (a model call is a 'generation')."""
+  usage = getattr(response, "usage", None)
+  model = model or get_settings().llm_model
+  prompt_tokens = getattr(usage, "prompt_tokens", None)
+  completion_tokens = getattr(usage, "completion_tokens", None) or 0
+  cost = _cost_usd(model, prompt_tokens, completion_tokens) if prompt_tokens is not None else None
+  annotate(model=model, prompt_tokens=prompt_tokens,
+           completion_tokens=completion_tokens if usage else None, cost_usd=cost)
 litellm.suppress_debug_info = True  # no advert banners in logs
 # LiteLLM message objects trigger a harmless Pydantic serializer warning on every tool turn
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
@@ -81,6 +97,7 @@ def embed(texts: list[str]) -> list[list[float]]:
           input=texts,
           timeout=settings.llm_timeout_seconds,
       )
+      _record_usage(response, settings.embedding_model)
       return [item["embedding"] for item in response.data]
     except litellm.RateLimitError:
       if attempt > settings.embedding_rate_limit_retries:
