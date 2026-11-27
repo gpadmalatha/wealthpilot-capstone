@@ -1,17 +1,13 @@
-# WealthPilot data placeholder
+# WealthPilot data
 
-Generate or copy the toolkit output into this directory. No generated data is included.
+Synthetic data generated with the course Data Toolkit (version 1.0.4, seed 42) for the fictional lender Ashva Capital. It contains no personal data and is committed so a clean clone can run the tests and scripts. Provenance, counts and SHA-256 checksums: `docs/data_sources.md`.
 
-Expected files after generation:
+Contents:
 
 - `manifest.json`
-- `corpus/index.json`
-- `corpus/markdown/*.md` and `corpus/pdf/*.pdf`
-- `intake/records.jsonl`
-- `eval/golden_set.json`
-- `mock_api/applicants.csv` and `mock_api/applicants.json`
-- `mock_api/bureau_reports.csv` and `mock_api/bureau_reports.json`
-- `mock_api/bank_statements.csv` and `mock_api/bank_statements.json`
-- `mock_api/past_decisions.csv` and `mock_api/past_decisions.json`
+- `corpus/index.json`, `corpus/markdown/*.md` and `corpus/pdf/*.pdf` (13 policy documents)
+- `intake/records.jsonl` (200 intake records)
+- `eval/golden_set.json` (20 evaluation cases)
+- `mock_api/*.csv` and `mock_api/*.json` (applicants, bureau reports, bank statements, past decisions, loan applications, underwriting reference, signatories, risk grades, sector policies, policy limits, approval authorities, reason codes, reference rates)
 
-Preserve originals. Use `runtime/mock_api/` for mutable application state.
+Do not edit these files; they are the originals. `mock_api/underwriting_reference.csv` is ground truth for evaluation only and is never given to an agent. Mutable state goes in `runtime/`.
