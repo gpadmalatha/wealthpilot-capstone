@@ -32,18 +32,22 @@ pip install -e ".[dev]"
 copy .env.example .env
 ```
 
-The synthetic toolkit data is not in the repository (it is git-ignored). Generate it
-with the course Data Toolkit (`python generate.py --domain wealthpilot`, toolkit 1.0.4,
-seed 42) and copy the output to `data/wealthpilot/`; see `docs/data_sources.md`.
-The tests stop with a clear message if it is missing.
-
-Put your own model API key in `.env` (never commit it). Then:
+Put your own model API key in `.env` (never commit it), and an `API_KEY` of your choice for
+the state-changing endpoints. The synthetic toolkit data is committed in `data/wealthpilot`
+(no personal data; provenance in `docs/data_sources.md`), so nothing needs generating. Then:
 
 ```
-python -m pytest tests\unit -q
-python scripts\check_policy_engine.py
-uvicorn capstone.api.main:get_app --factory
+python -m pytest tests -q                    # offline, model stubbed, about 1 minute
+python scripts\check_policy_engine.py        # offline, 350/350 against the reference table
+python scripts\build_policy_index.py         # once, needs your key (embeddings), about 1 minute
+uvicorn capstone.api.main:get_app --factory --port 8000
 ```
+
+The policy index (`runtime/qdrant`) is not committed; it is built by the third command and is
+needed by the assistant, the API and the evaluation scripts.
+
+Evaluate: `python scripts\run_final_evaluation.py --judge` (about 15 minutes; component scores,
+own adversarial cases, LLM judge). Probes: `python scripts\run_probes.py` (offline).
 
 Full instructions, including the approval and resume walkthrough, are in
 `docs/demo_steps.md`. Docker files are included but were not built in the
