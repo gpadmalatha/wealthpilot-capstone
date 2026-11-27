@@ -50,3 +50,29 @@ async def list_tool_names() -> list[str]:
 
 def call_tools_sync(calls: list[tuple[str, dict]]) -> list[ToolResult]:
   return asyncio.run(call_tools(calls))
+
+
+async def read_resource(uri: str) -> str:
+  """Read one MCP resource (read-only context such as the policy limits) and return its text."""
+  async with stdio_client(_server_parameters()) as (read, write):
+    async with ClientSession(read, write) as session:
+      await session.initialize()
+      result = await session.read_resource(uri)
+      return "".join(item.text for item in result.contents if getattr(item, "text", None))
+
+
+async def get_prompt(name: str, arguments: dict[str, str]) -> str:
+  """Fetch one MCP prompt template, filled in, as plain text."""
+  async with stdio_client(_server_parameters()) as (read, write):
+    async with ClientSession(read, write) as session:
+      await session.initialize()
+      result = await session.get_prompt(name, arguments)
+      return "\n".join(m.content.text for m in result.messages if getattr(m.content, "text", None))
+
+
+def read_resource_sync(uri: str) -> str:
+  return asyncio.run(read_resource(uri))
+
+
+def get_prompt_sync(name: str, arguments: dict[str, str]) -> str:
+  return asyncio.run(get_prompt(name, arguments))

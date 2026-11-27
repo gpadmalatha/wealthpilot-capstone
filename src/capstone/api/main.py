@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from capstone.api.routes import router
 from capstone.observability.logging import configure_logging
 from capstone.observability.tracing import start_trace
+from capstone.settings import get_settings
 from capstone.workflows.checkpoints import open_checkpointer
 from capstone.workflows.graph import build_graph
 
@@ -29,17 +30,22 @@ def _default_assistant_factory() -> Callable[[], Any]:
   return get
 
 
+def _committee_if_enabled():
+  if not get_settings().committee_enabled:
+    return None
+  from capstone.agents.committee import run_committee
+  return run_committee
+
+
 def create_app(graph: Optional[Any] = None, assistant_factory: Optional[Callable[[], Any]] = None) -> FastAPI:
   app = FastAPI(title="WealthPilot", version="1.0.0", description="SME loan underwriting and credit research assistant")
-  app.state.graph = graph if graph is not None else build_graph(open_checkpointer())
+  app.state.graph = graph if graph is not None else build_graph(open_checkpointer(), committee=_committee_if_enabled())
   app.state.assistant = assistant_factory or _default_assistant_factory()
   app.include_router(router)
 
   @app.middleware("http")
   async def trace_requests(request: Request, call_next):
-    with start_trace("http_request", session_id=request.headers.get("X-Session-Id"),
-                     user_id=request.headers.get("X-User-Id"),
-                     method=request.method, path=request.url.path) as trace_id:
+    with start_trace("http_request", method=request.method, path=request.url.path) as trace_id:
       response = await call_next(request)
       response.headers["X-Trace-Id"] = trace_id
       return response

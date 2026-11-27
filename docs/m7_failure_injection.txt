@@ -1,0 +1,24 @@
+Seeded fault injection (seed 42), 300 requests per scenario, 60 applicants.
+Retries: 3 tries with exponential backoff; breaker opens after 3 failures, cool-down 20 simulated seconds.
+
+SCENARIO 1: random timeouts, 30 percent of calls on both sources
+                             usable answers   live  cache  to human  primary calls  p95 backoff wait
+  before hardening             196/300 =  65%    196      0       104            300             0.0 s
+  after hardening              300/300 = 100%    299      1         0            430             2.2 s
+
+SCENARIO 2: primary bureau down for requests 100-199, backup healthy
+                             usable answers   live  cache  to human  primary calls  p95 backoff wait
+  before hardening             200/300 =  67%    200      0       100            300             0.0 s
+  after hardening              300/300 = 100%    300      0         0            219             0.0 s
+
+SCENARIO 3: both bureaus down for requests 100-199 (cache or human queue only)
+                             usable answers   live  cache  to human  primary calls  p95 backoff wait
+  before hardening             200/300 =  67%    200      0       100            300             0.0 s
+  after hardening              273/300 =  91%    199     74        27            220             0.0 s
+
+Summary (usable-answer rate, before -> after):
+  1 random timeouts (30% of calls, both sources)   65.3% -> 100.0%
+  2 primary down, backup up                        66.7% -> 100.0%
+  3 both down                                      66.7% -> 91.0%
+
+In every scenario a request with no usable report is queued for a human; none is decided automatically.

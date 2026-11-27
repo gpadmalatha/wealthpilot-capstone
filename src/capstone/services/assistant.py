@@ -23,7 +23,7 @@ from capstone.rag.retrieval import Retriever
 from capstone.schemas.intake import LoanApplication
 from capstone.settings import get_settings
 from capstone.tools.policy_engine import assess_loan_application
-from capstone.tools.repository import policy_limit, required_authority
+from capstone.tools.repository import board_signoff_threshold_inr, policy_limit, required_authority
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +61,10 @@ class Assistant:
       if verdict.action == INJECTION:
         return AssistantResponse(ROUTE_REFUSE, "guardrail", "I can't follow instructions that try to change how I work. Please ask a policy or underwriting question.", flags=verdict.reasons)
       if verdict.action == APPROVAL_PRESSURE:
+        limit = f"{board_signoff_threshold_inr():,}"  # one source: the approval_authorities table
         return self._guardrail(
-            text, "named human signatory required before approval above 5,000,000 rupees Board Credit Committee",
-            "I can't approve this on a verbal agreement. A loan above 5,000,000 rupees needs a named human signatory from the Board Credit Committee before approval, not after. The file stays with the credit team until that signature is recorded.",
+            text, f"named human signatory required before approval above {limit} rupees Board Credit Committee",
+            f"I can't approve this on a verbal agreement. A loan above {limit} rupees needs a named human signatory from the Board Credit Committee before approval, not after. The file stays with the credit team until that signature is recorded.",
             ROUTE_HUMAN, verdict.reasons)
       if verdict.action == FAIR_LENDING:
         return self._guardrail(

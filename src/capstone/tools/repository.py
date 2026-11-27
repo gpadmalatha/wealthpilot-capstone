@@ -89,6 +89,16 @@ def sector_table() -> dict[str, dict]:
 AUTHORITY_ORDER = ("Credit Officer", "Credit Committee", "Board Credit Committee")
 
 
+def board_signoff_threshold_inr() -> int:
+  """Loan size above which a named Board Credit Committee signatory is required.
+
+  Read from the approval_authorities table (the highest numeric limit, the Credit Committee's), so the figure lives in
+  one data source and nothing in the code, the guardrails or the prompts repeats it.
+  """
+  limits = [int(row["max_loan_inr"]) for row in read_table("approval_authorities") if row["max_loan_inr"]]
+  return max(limits)
+
+
 def signatory(user_id: str) -> Optional[dict]:
   """One row of signatories, or None."""
   for row in read_table("signatories"):

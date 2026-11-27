@@ -234,6 +234,7 @@ def test_a_broken_sink_never_breaks_the_request(env):
   tracing.set_sink(broken)
   assert wf.start(_graph(env, BureauSource("primary", Flaky(0))), AUTO_DECLINE)["outcome"] == "declined"
 
+
 def test_fallback_is_flagged_and_tagged_on_spans(tmp_path):
   events = []
   tracing.set_sink(events.append)

@@ -222,6 +222,8 @@ __marimo__/
 !/data/**/
 !/data/**/.gitkeep
 !/data/**/README.md
+# The synthetic WealthPilot toolkit data (no personal data) is committed so a clean clone can run.
+!/data/wealthpilot/**
 /runtime/**
 !/runtime/**/
 !/runtime/**/.gitkeep

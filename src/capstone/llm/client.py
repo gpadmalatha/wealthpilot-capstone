@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 def _cost_usd(model: str, prompt_tokens: int, completion_tokens: int) -> Optional[float]:
   """Price of one call from LiteLLM's price table; None when the model is not in the table."""
   try:
-    prompt_cost, completion_cost = litellm.cost_per_token(
-        model=model, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
+    prompt_cost, completion_cost = litellm.cost_per_token(model=model, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
     return round(prompt_cost + completion_cost, 8)
   except Exception:  # unknown model: report no cost rather than a wrong one
     logger.debug("no price known for model %s", model)
@@ -30,8 +29,8 @@ def _record_usage(response, model: Optional[str] = None) -> None:
   prompt_tokens = getattr(usage, "prompt_tokens", None)
   completion_tokens = getattr(usage, "completion_tokens", None) or 0
   cost = _cost_usd(model, prompt_tokens, completion_tokens) if prompt_tokens is not None else None
-  annotate(model=model, prompt_tokens=prompt_tokens,
-           completion_tokens=completion_tokens if usage else None, cost_usd=cost)
+  annotate(model=model, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens if usage else None, cost_usd=cost)
+
 litellm.suppress_debug_info = True  # no advert banners in logs
 # LiteLLM message objects trigger a harmless Pydantic serializer warning on every tool turn
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")

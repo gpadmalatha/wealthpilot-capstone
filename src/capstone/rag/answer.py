@@ -6,13 +6,25 @@ from typing import Callable, Optional
 
 from pydantic import BaseModel, ValidationError, model_validator
 
+from capstone.guardrails.input_checks import contains_injection
 from capstone.llm.client import chat
+from capstone.observability.tracing import annotate
 from capstone.rag.retrieval import Retriever
 from capstone.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
 ABSTAIN_TEXT = "The policy documents provided do not contain an answer to this question."
+
+
+def drop_injected_chunks(sources: list[dict]) -> tuple[list[dict], list[str]]:
+  """Input scan on retrieved content: a chunk that tries to give the model orders is dropped before the prompt is built."""
+  clean = [s for s in sources if not contains_injection(s["text"])]
+  flagged = [s["chunk_id"] for s in sources if contains_injection(s["text"])]
+  if flagged:
+    logger.warning("dropped retrieved chunks that contain instructions: %s", flagged)
+    annotate(retrieved_injection_flagged=",".join(flagged))
+  return clean, flagged
 
 
 class AnswerError(Exception):
@@ -37,7 +49,7 @@ class GroundedAnswer(BaseModel):
 class AnswerOutcome:
   answer: GroundedAnswer
   sources: list[dict]
-  abstained_by: Optional[str]  # None, "low_relevance" (code) or "model"
+  abstained_by: Optional[str]  # None, "low_relevance" or "retrieved_content_flagged" (code), or "model"
 
 
 def _load_prompt() -> str:
@@ -52,7 +64,9 @@ def _format_sources(sources: list[dict]) -> str:
 
 def answer_question(question: str, retriever: Retriever, chat_function: Callable[..., str] = chat) -> AnswerOutcome:
   settings = get_settings()
-  sources = retriever.search(question, mode="hybrid", rerank=True)
+  sources, flagged = drop_injected_chunks(retriever.search(question, mode="hybrid", rerank=True))
+  if flagged and not sources:
+    return AnswerOutcome(GroundedAnswer(answer=ABSTAIN_TEXT, citations=[], grounded=False), [], "retrieved_content_flagged")
   if not sources or sources[0].get("rerank_score", 10.0) < settings.rerank_min_score:
     logger.info("abstaining: best reranked source scored below %.1f", settings.rerank_min_score)
     return AnswerOutcome(GroundedAnswer(answer=ABSTAIN_TEXT, citations=[], grounded=False), sources, "low_relevance")

@@ -11,10 +11,16 @@ from dataclasses import dataclass, field
 ALLOW, INJECTION, FAIR_LENDING, APPROVAL_PRESSURE = "allow", "injection", "fair_lending", "approval_pressure"
 
 INJECTION_PATTERNS = (
-    r"ignore (all |any )?(previous|prior|above) (instructions|rules)",
+    r"ignore (all |any |every )?(of )?(your|the|my|these|those|previous|prior|above|earlier)( \w+)? (instructions|rules|guidelines|prompt|polic(y|ies))",
+    r"forget (all |your |the )?(previous |prior |earlier )?(instructions|rules|guidelines)",
+    r"override (your |the )(instructions|rules|guardrails|safeguards)",
+    r"(bypass|disable|skip|turn off) (the |your |all )?(guardrails|safeguards|safety checks|human review)",
     r"disregard (the |your )?(system|previous|prior) (prompt|instructions|rules)",
     r"reveal (your |the )?(system )?prompt",
     r"you are now\b",
+    r"note to (the )?(underwriting |credit |loan )?(system|model|assistant|engine|ai)\b",
+    r"set the (grade|decision|outcome|rating|risk grade) to\b",
+    r"the (policy|rules?) engine is (out ?of ?date|wrong|broken|outdated)",
     r"act as (an? )?(unrestricted|jailbroken)",
 )
 
@@ -28,7 +34,7 @@ INFLUENCE_CUES = (r"\bshould\b", r"\bpush\b", r"\bover the line\b", r"\bboost\b"
 
 PRESSURE_PATTERNS = (
     r"signature later", r"sign(ed)? later", r"verbally (agreed|approved)", r"already (agreed|approved)",
-    r"approve (this|it|the)\b.{0,60}\b(now|immediately|today)\b",
+    r"approve\b.{0,60}\b(now|immediately|today|right away|asap)\b",
 )
 
 # A sentence mentioning any of these is dropped from application text: they describe who the applicant is or where
@@ -39,6 +45,12 @@ PROXY_MARKERS = (
 )
 APPLICATION_CUE = re.compile(r"\b(term loan request|loan request|requesting|requested)\b.*\b(rupees|inr)\b", re.IGNORECASE | re.DOTALL)
 MIN_NUMBERS_IN_APPLICATION = 3
+
+
+def contains_injection(text: str) -> bool:
+  """True when text (a user message, an application body or a retrieved document chunk) tries to give the model orders."""
+  lowered = text.lower()
+  return any(re.search(pattern, lowered) for pattern in INJECTION_PATTERNS)
 
 
 @dataclass
@@ -53,7 +65,7 @@ def looks_like_application(text: str) -> bool:
 
 def check_request(text: str) -> InputVerdict:
   lowered = text.lower()
-  if any(re.search(pattern, lowered) for pattern in INJECTION_PATTERNS):
+  if contains_injection(text):
     return InputVerdict(INJECTION, ["prompt_injection_pattern"])
   if any(re.search(pattern, lowered) for pattern in PRESSURE_PATTERNS):
     return InputVerdict(APPROVAL_PRESSURE, ["approval_without_signatory"])

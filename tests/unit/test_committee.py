@@ -126,3 +126,24 @@ def test_guard_requires_refer_for_a_fraud_hold():
   decline = {"recommendation": "decline", "rationale": "Revenue does not match documents.", "key_facts": []}
   result = cm.run_committee("ASH-L-00017", llm=Script(decline, ACCEPT, ACCEPT), fetch=_fake_external)
   assert result.outcome == "rejected" and result.final_recommendation == "refer"
+
+
+def test_agent_boundaries_are_enforced():
+  import pytest
+  from capstone.agents import committee as c
+  with pytest.raises(PermissionError):
+    c.call_agent_tools("analyst", [("get_bureau_report", {"applicant_id": "x"})])
+  with pytest.raises(PermissionError):
+    c.read_agent_resource("risk_reviewer", c.POLICY_RESOURCE)
+  assert "documents" not in c.slice_for("risk_reviewer", {"documents": 1, "policy": 2})
+  assert "bureau" not in c.slice_for("compliance_reviewer", {"bureau": 1, "policy": 2})
+
+
+def test_node_cannot_write_outside_its_keys():
+  import pytest
+  from capstone.agents.committee import _owned
+  @_owned("risk_reviewer")
+  def bad(state):
+    return {"memo": {}}
+  with pytest.raises(PermissionError):
+    bad({})

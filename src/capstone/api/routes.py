@@ -5,6 +5,7 @@ from dataclasses import asdict
 from typing import Callable, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from capstone.settings import get_settings
@@ -42,9 +43,17 @@ def health() -> dict:
 
 
 @router.post("/assist")
-def assist(body: AssistRequest, request: Request) -> dict:
-  """Ask a policy question or submit application text. Read-only: nothing is decided here."""
+def assist(body: AssistRequest, request: Request):
+  """Ask a policy question or submit application text. Read-only: nothing is decided here.
+
+  A request the guardrails block (prompt injection, pressure to approve without a signatory, a protected circumstance
+  offered as a reason) is answered with HTTP 422, status "blocked" and the flags that fired.
+  """
   response = request.app.state.assistant().handle(body.text)
+  if response.kind == "guardrail":
+    return JSONResponse(status_code=422, content={"status": "blocked", "reason": response.flags[0] if response.flags else "guardrail",
+                                                  "flags": response.flags, "route": response.route, "answer": response.answer,
+                                                  "citations": response.citations})
   return asdict(response)
 
 

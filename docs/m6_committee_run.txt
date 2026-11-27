@@ -8,21 +8,21 @@ get_bureau_report(NOPE) via MCP: ok=False error=not_found
 
 === ASH-L-00006 [borderline (thin file, sector cap)]
 outcome=agreed final_recommendation=refer rounds=1
-  round 1: analyst says refer: The policy engine status is borderline with reason codes THIN_FILE and SECTOR_CAP, and auto_approve_allowed is false, requiring human signoff. Furthermore, the 
+  round 1: analyst says refer: The policy engine has returned a status of 'borderline' with reason codes 'THIN_FILE' and 'SECTOR_CAP', requiring human sign-off as auto-approve is not allowed.
     policy_guard: accept (-)
     risk_reviewer: accept (-)
     compliance_reviewer: accept (-)
 
 === ASH-L-00017 [revenue mismatch over 25 percent (fraud hold)]
 outcome=escalated final_recommendation=refer rounds=1
-  round 1: analyst says refer: The policy status is borderline and requires human signoff due to multiple reason codes including FRAUD_HOLD, DOC_MISMATCH, and TENOR_ABOVE_LIMIT. Per the credi
+  round 1: analyst says refer: The policy engine returned a borderline status with reason codes including FRAUD_HOLD, DOC_MISMATCH, and TENOR_ABOVE_LIMIT. Per credit committee rules, if FRAUD
     policy_guard: accept (-)
-    risk_reviewer: escalate (The evidence indicates a FRAUD_HOLD and revenue mismatch (declared 6,190,000 INR vs verified 4,500,000 INR, yielding a 37.6% variance), which touches upon suspected fraud and requires human escalation)
+    risk_reviewer: escalate (The policy engine includes a FRAUD_HOLD reason code combined with severe document mismatch and high revenue variance, which triggers mandatory committee escalation rather than simple referral to preve)
     compliance_reviewer: accept (-)
 
 === ASH-L-00046 [approvable, needs Credit Committee sign-off]
-outcome=agreed final_recommendation=refer rounds=1
-  round 1: analyst says refer: Although the policy status is approvable with a strong DSCR of 3.07 and zero revenue variance, the application requires human signoff and there is a shortfall i
+outcome=agreed final_recommendation=approve rounds=1
+  round 1: analyst says approve: The policy engine verdict is 'approvable' with reason code APPROVED_STANDARD. Financial metrics exceed policy minimums with a strong DSCR of 3.07 (against a flo
     policy_guard: accept (-)
     risk_reviewer: accept (-)
     compliance_reviewer: accept (-)

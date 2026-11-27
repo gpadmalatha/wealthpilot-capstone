@@ -1,33 +1,37 @@
 SCENARIO A: bureau times out twice, then answers (bounded retries with backoff). Whole request traced.
   status=done outcome=approved bureau_source=live
-  trail=['intake', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->auto_approve', 'auto_approve']
+  trail=['intake', 'recall_memory(2)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->auto_approve', 'auto_approve', 'remember_outcome']
   primary bureau was called 3 times for one request
   trace tree (one trace id for the entire request):
-  underwrite_start [request] ok 2043.37ms 
-    node:intake [node] ok 7.58ms 
-      tool:get_application [tool] ok 7.54ms {'ok': True, 'error_code': None}
-    node:pull_bureau [node] ok 1995.84ms 
-      bureau:bureau_primary [dependency] ok 1995.77ms {'applicant_id': 'ASH-A-00005', 'result': 'ok'}
-    node:verify_documents [node] ok 1.7ms 
-      tool:verify_documents [tool] ok 1.65ms {'ok': True, 'error_code': None}
-    node:score_risk [node] ok 5.09ms 
-      tool:assess_application [tool] ok 5.03ms {'ok': True, 'error_code': None}
-    node:auto_approve [node] ok 4.04ms 
-      tool:record_decision [tool] ok 4.01ms {'ok': True, 'error_code': None}
+  underwrite_start [request] ok 2316.88ms 
+    node:intake [node] ok 10.08ms 
+      tool:get_application [tool] ok 9.24ms {'ok': True, 'error_code': None}
+    node:recall_memory [node] ok 2.16ms 
+    node:pull_bureau [node] ok 2240.68ms 
+      bureau:bureau_primary [dependency] ok 2238.9ms {'applicant_id': 'ASH-A-00005', 'result': 'ok'}
+    node:verify_documents [node] ok 3.79ms 
+      tool:get_bank_statements [tool] ok 0.15ms {'ok': True, 'error_code': None}
+      tool:verify_loan_application [tool] ok 1.88ms {'ok': True, 'error_code': None}
+    node:score_risk [node] ok 7.1ms 
+      tool:assess_loan_application [tool] ok 5.11ms {'ok': True, 'error_code': None}
+      tool:check_approval_authority [tool] ok 0.93ms {'ok': True, 'error_code': None}
+    node:auto_approve [node] ok 6.64ms 
+      tool:record_decision [tool] ok 6.19ms {'ok': True, 'error_code': None}
+    node:remember_outcome [node] ok 12.21ms 
   trace_ids in this request: 1
 
 SCENARIO B: primary bureau is down, the backup source (the MCP bureau server) answers.
   status=done outcome=approved bureau_source=live
-  trail=['intake', 'pull_bureau:live(bureau_backup_mcp)', 'verify_documents', 'score_risk->auto_approve', 'auto_approve']
+  trail=['intake', 'recall_memory(0)', 'pull_bureau:live(bureau_backup_mcp)', 'verify_documents', 'score_risk->auto_approve', 'auto_approve', 'remember_outcome']
 
 SCENARIO C: every live source is down but a recent report is cached: a clean small loan is NOT auto-approved.
   status=waiting outcome=None bureau_source=cache
   paused for human review kind=bureau_stale
-  trail=['intake', 'pull_bureau:cache(cache)', 'verify_documents', 'score_risk->human_review']
+  trail=['intake', 'recall_memory(3)', 'pull_bureau:cache(cache)', 'verify_documents', 'score_risk->human_review']
 
 SCENARIO D: every source is down and nothing is cached: no decision, the file is queued for a human.
   status=done outcome=queued_bureau_unavailable bureau_source=unavailable
-  trail=['intake', 'pull_bureau:unavailable(none)']
+  trail=['intake', 'recall_memory(0)', 'pull_bureau:unavailable(none)', 'remember_outcome']
   hand-off records written: 1; decisions written: none
 
 SCENARIO E: circuit breaker. Threshold 2 failed fetches, cool-down 2 seconds.

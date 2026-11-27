@@ -14,6 +14,7 @@ def isolated_runtime(tmp_path, monkeypatch):
   monkeypatch.setattr(fallbacks, "_default", None)
   monkeypatch.setattr(long_term, "default_db_path", lambda: tmp_path / "memory.db")
   tracing.set_sink(lambda event: None)
+  monkeypatch.setattr(tracing, "_ensure_otel", lambda: None)  # tests never write OpenTelemetry files
   yield
   tracing.set_sink(None)
 

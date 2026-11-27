@@ -1,0 +1,53 @@
+PROCESS 1: start with the committee switched on
+23:14:57 - LiteLLM:INFO: utils.py:5639 - 
+LiteLLM completion() model= gemini-flash-lite-latest; provider = gemini
+23:14:57 - LiteLLM:INFO: vertex_and_google_ai_studio_gemini.py:1858 - Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-flash-lite-latest) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+23:14:59 - LiteLLM:INFO: utils.py:2281 - Wrapper: Completed Call, calling success_handler
+23:14:59 - LiteLLM:INFO: utils.py:5639 - 
+LiteLLM completion() model= gemini-flash-lite-latest; provider = gemini
+23:14:59 - LiteLLM:INFO: vertex_and_google_ai_studio_gemini.py:1858 - Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-flash-lite-latest) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+23:15:00 - LiteLLM:INFO: utils.py:2281 - Wrapper: Completed Call, calling success_handler
+23:15:00 - LiteLLM:INFO: utils.py:5639 - 
+LiteLLM completion() model= gemini-flash-lite-latest; provider = gemini
+23:15:00 - LiteLLM:INFO: vertex_and_google_ai_studio_gemini.py:1858 - Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-flash-lite-latest) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+23:15:01 - LiteLLM:INFO: utils.py:2281 - Wrapper: Completed Call, calling success_handler
+- ASH-L-00006 [borderline] status=waiting trail=['intake', 'recall_memory(2)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'committee:agreed']
+    committee outcome=agreed rounds=1 recommendation=refer (advisory only)
+    decisions recorded so far: 0 (the human has not answered)
+23:15:04 - LiteLLM:INFO: utils.py:5639 - 
+LiteLLM completion() model= gemini-flash-lite-latest; provider = gemini
+23:15:04 - LiteLLM:INFO: vertex_and_google_ai_studio_gemini.py:1858 - Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-flash-lite-latest) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+23:15:06 - LiteLLM:INFO: utils.py:2281 - Wrapper: Completed Call, calling success_handler
+23:15:06 - LiteLLM:INFO: utils.py:5639 - 
+LiteLLM completion() model= gemini-flash-lite-latest; provider = gemini
+23:15:06 - LiteLLM:INFO: vertex_and_google_ai_studio_gemini.py:1858 - Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-flash-lite-latest) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+23:15:07 - LiteLLM:INFO: utils.py:2281 - Wrapper: Completed Call, calling success_handler
+23:15:07 - LiteLLM:INFO: utils.py:5639 - 
+LiteLLM completion() model= gemini-flash-lite-latest; provider = gemini
+23:15:07 - LiteLLM:INFO: vertex_and_google_ai_studio_gemini.py:1858 - Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-flash-lite-latest) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+23:15:07 - LiteLLM:INFO: utils.py:2281 - Wrapper: Completed Call, calling success_handler
+23:15:07 - LiteLLM:INFO: utils.py:5639 - 
+LiteLLM completion() model= gemini-flash-lite-latest; provider = gemini
+23:15:07 - LiteLLM:INFO: vertex_and_google_ai_studio_gemini.py:1858 - Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-flash-lite-latest) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+23:15:09 - LiteLLM:INFO: utils.py:2281 - Wrapper: Completed Call, calling success_handler
+23:15:09 - LiteLLM:INFO: utils.py:5639 - 
+LiteLLM completion() model= gemini-flash-lite-latest; provider = gemini
+23:15:09 - LiteLLM:INFO: vertex_and_google_ai_studio_gemini.py:1858 - Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-flash-lite-latest) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+23:15:10 - LiteLLM:INFO: utils.py:2281 - Wrapper: Completed Call, calling success_handler
+23:15:10 - LiteLLM:INFO: utils.py:5639 - 
+LiteLLM completion() model= gemini-flash-lite-latest; provider = gemini
+23:15:10 - LiteLLM:INFO: vertex_and_google_ai_studio_gemini.py:1858 - Warning: Setting temperature < 1.0 for Gemini 3 models (gemini-flash-lite-latest) can cause infinite loops, degraded reasoning performance, and failure on complex tasks. Strongly recommended to use temperature = 1.0 (default).
+23:15:10 - LiteLLM:INFO: utils.py:2281 - Wrapper: Completed Call, calling success_handler
+- ASH-L-00046 [approvable, 1.8 million] status=waiting trail=['intake', 'recall_memory(2)', 'pull_bureau:live(bureau_primary)', 'verify_documents', 'score_risk->human_review', 'committee:agreed']
+    committee outcome=agreed rounds=2 recommendation=approve (advisory only)
+    decisions recorded so far: 0 (the human has not answered)
+
+PROCESS 2: a brand new process, same checkpoint database
+- ASH-L-00006: still waiting on disk = True
+    committee memo restored from checkpoint: outcome=agreed
+    human ASH-U-001 answered declined -> done outcome=declined
+- ASH-L-00046: still waiting on disk = True
+    committee memo restored from checkpoint: outcome=agreed
+    human ASH-U-013 answered approved -> done outcome=approved
+
+Decisions on disk: 2; unique applications: 2 (exactly one decision each, made by a human)

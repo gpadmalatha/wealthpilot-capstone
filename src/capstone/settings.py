@@ -23,6 +23,8 @@ class Settings(BaseSettings):
   max_approval_attempts: int = 3  # rejected human decisions before a case is escalated as unresolved
   max_committee_rounds: int = 3  # analyst/reviewer revision rounds before the committee gives up
   tracing_enabled: bool = True
+  committee_enabled: bool = False  # COMMITTEE_ENABLED=true puts the advisory committee before human review in the API workflow
+  otel_enabled: bool = True  # also export every span as an OpenTelemetry span (OTEL_ENABLED=false to switch off)
   retry_max_attempts: int = 3  # tries per dependency call (first try included)
   retry_base_delay_seconds: float = 0.5
   retry_max_delay_seconds: float = 4.0
