@@ -12,7 +12,7 @@ All data is synthetic, generated with the course Data Toolkit. No real personal 
 | Text generator | Gemini, `gemini-flash-lite-latest` |
 | Domain | WealthPilot, SME loan underwriting and credit research (fictional lender Ashva Capital) |
 
-The generated data lives in `data/wealthpilot/` and is git-ignored. Only `data/README.md` files are tracked. To reproduce, run the toolkit with the command above and copy its `wealthpilot` output folder to `data/wealthpilot/`.
+The generated data lives in `data/wealthpilot/` and is committed (it is synthetic and contains no personal data), so a clean clone can run without the toolkit. To regenerate it, run the toolkit with the command above and copy its `wealthpilot` output folder over `data/wealthpilot/`, then compare the SHA-256 values below.
 
 ## Observed output (from manifest.json)
 | Asset | Count |
